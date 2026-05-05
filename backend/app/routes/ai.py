@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict
-from app.services.openai_message_service import _openai_request
+from app.services.openai_message_service import _llm_request
 from app.core.config import settings
 
 router = APIRouter(prefix="/ai", tags=["AI"])
@@ -12,8 +12,9 @@ class ChatRequest(BaseModel):
 
 @router.post("/chat")
 async def chat_with_assistant(request: ChatRequest):
-    if not settings.OPENAI_API_KEY:
-        raise HTTPException(status_code=400, detail="OpenAI API key not configured")
+    is_groq = settings.USE_GROQ_FOR_ALL and (settings.GROQ_API_KEY or "").strip()
+    if not is_groq and not (settings.OPENAI_API_KEY or "").strip():
+        raise HTTPException(status_code=400, detail="AI API key not configured")
 
     system_prompt = (
         "You are the DaleIQ AI Assistant. You help users manage their CRM, leads, and sales pipelines. "
@@ -32,13 +33,13 @@ async def chat_with_assistant(request: ChatRequest):
     messages.append({"role": "user", "content": request.message})
 
     body = {
-        "model": settings.OPENAI_MODEL,
+        "model": settings.GROQ_MODEL if is_groq else settings.OPENAI_MODEL,
         "temperature": 0.7,
         "messages": messages,
     }
 
     try:
-        reply = _openai_request(body)
+        reply = _llm_request(body)
         return {"reply": reply}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

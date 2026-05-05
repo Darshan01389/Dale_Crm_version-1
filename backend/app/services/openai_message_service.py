@@ -7,13 +7,17 @@ from app.ml.sentiment_service import SentimentResult
 from app.schemas.lead import LeadCreate
 
 
-def _openai_request(body: dict) -> str:
-    key = (settings.OPENAI_API_KEY or "").strip()
+def _llm_request(body: dict) -> str:
+    is_groq = settings.USE_GROQ_FOR_ALL and (settings.GROQ_API_KEY or "").strip()
+    key = (settings.GROQ_API_KEY if is_groq else settings.OPENAI_API_KEY or "").strip()
+    
     if not key:
-        raise ValueError("OpenAI API key is not configured")
+        raise ValueError("AI API key is not configured")
+
+    url = "https://api.groq.com/openai/v1/chat/completions" if is_groq else "https://api.openai.com/v1/chat/completions"
 
     req = urllib.request.Request(
-        "https://api.openai.com/v1/chat/completions",
+        url,
         data=json.dumps(body).encode("utf-8"),
         headers={
             "Authorization": f"Bearer {key}",
@@ -32,7 +36,8 @@ def generate_whatsapp_message(
     sentiment: SentimentResult,
     purpose: str | None = None,
 ) -> str:
-    if not (settings.OPENAI_API_KEY or "").strip():
+    is_groq = settings.USE_GROQ_FOR_ALL and (settings.GROQ_API_KEY or "").strip()
+    if not is_groq and not (settings.OPENAI_API_KEY or "").strip():
         greeting = lead.title or "Hello"
         return (
             f"Hi {greeting},\n\nI noticed your interest from {lead.source or 'your recent inquiry'}. "
@@ -61,7 +66,7 @@ def generate_whatsapp_message(
     }
 
     body = {
-        "model": settings.OPENAI_MODEL,
+        "model": settings.GROQ_MODEL if is_groq else settings.OPENAI_MODEL,
         "temperature": 0.7,
         "messages": [
             {"role": "system", "content": prompt},
@@ -70,7 +75,7 @@ def generate_whatsapp_message(
     }
 
     try:
-        return _openai_request(body)
+        return _llm_request(body)
     except (urllib.error.URLError, urllib.error.HTTPError, ValueError, KeyError):
         return (
             f"Hi {lead.title or 'there'},\n\nThanks for reaching out through {lead.source_platform or lead.source or 'your channel'}. "
@@ -78,7 +83,8 @@ def generate_whatsapp_message(
         )
 
 def generate_ai_summary(lead, activities, voice_recordings) -> str:
-    if not (settings.OPENAI_API_KEY or "").strip():
+    is_groq = settings.USE_GROQ_FOR_ALL and (settings.GROQ_API_KEY or "").strip()
+    if not is_groq and not (settings.OPENAI_API_KEY or "").strip():
         return "Deal is progressing. Suggested next step: Follow up with prospect."
 
     prompt = (
@@ -101,7 +107,7 @@ def generate_ai_summary(lead, activities, voice_recordings) -> str:
     }
 
     body = {
-        "model": settings.OPENAI_MODEL,
+        "model": settings.GROQ_MODEL if is_groq else settings.OPENAI_MODEL,
         "temperature": 0.5,
         "messages": [
             {"role": "system", "content": prompt},
@@ -110,12 +116,13 @@ def generate_ai_summary(lead, activities, voice_recordings) -> str:
     }
 
     try:
-        return _openai_request(body)
+        return _llm_request(body)
     except Exception:
         return "Deal is progressing. Suggested next step: Follow up with prospect."
 
 def ai_suggest_reply(lead, activities, voice_recordings) -> str:
-    if not (settings.OPENAI_API_KEY or "").strip():
+    is_groq = settings.USE_GROQ_FOR_ALL and (settings.GROQ_API_KEY or "").strip()
+    if not is_groq and not (settings.OPENAI_API_KEY or "").strip():
         return f"Hi {lead.title},\n\nFollowing up on our recent conversation. How would you like to proceed?"
 
     prompt = (
@@ -137,7 +144,7 @@ def ai_suggest_reply(lead, activities, voice_recordings) -> str:
     }
 
     body = {
-        "model": settings.OPENAI_MODEL,
+        "model": settings.GROQ_MODEL if is_groq else settings.OPENAI_MODEL,
         "temperature": 0.7,
         "messages": [
             {"role": "system", "content": prompt},
@@ -146,6 +153,6 @@ def ai_suggest_reply(lead, activities, voice_recordings) -> str:
     }
 
     try:
-        return _openai_request(body)
+        return _llm_request(body)
     except Exception:
         return f"Hi {lead.title},\n\nJust checking in on our last conversation. Let me know if you have any questions!"

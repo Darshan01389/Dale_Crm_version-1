@@ -15,12 +15,14 @@ const RepPulse = () => {
   const [showChecklist, setShowChecklist] = useState(profile?.role !== 'Sales Rep');
 
   // Mock stats based on period
-  const stats = {
-    '7d': { outreach: 142, meetings: 12, won: '₹1.2L', quota: 40 },
-    '30d': { outreach: 584, meetings: 45, won: '₹8.4L', quota: 84 },
-    '90d': { outreach: 1840, meetings: 128, won: '₹22.5L', quota: 75 },
-    '180d': { outreach: 3200, meetings: 210, won: '₹45.0L', quota: 92 },
-  }[period];
+  const statsData = {
+    '7d': { outreach: 142, meetings: 12, won: '₹1.2L', quota: 40, trend: [30, 45, 25, 60, 40, 55, 42], goals: [{ label: 'Qualify 5 Leads', progress: 3, total: 5 }, { label: '2 Discovery Calls', progress: 1, total: 2 }, { label: '₹1L Revenue', progress: 0.8, total: 1 }] },
+    '30d': { outreach: 584, meetings: 45, won: '₹8.4L', quota: 84, trend: [60, 80, 45, 90, 70, 100, 85], goals: [{ label: 'Qualify 20 Leads', progress: 14, total: 20 }, { label: '10 Discovery Calls', progress: 8, total: 10 }, { label: '₹10L Revenue', progress: 8.4, total: 10 }] },
+    '90d': { outreach: 1840, meetings: 128, won: '₹22.5L', quota: 75, trend: [80, 70, 100, 85, 110, 95, 120], goals: [{ label: 'Qualify 60 Leads', progress: 45, total: 60 }, { label: '30 Discovery Calls', progress: 22, total: 30 }, { label: '₹30L Revenue', progress: 22.5, total: 30 }] },
+    '180d': { outreach: 3200, meetings: 210, won: '₹45.0L', quota: 92, trend: [100, 120, 95, 110, 130, 115, 140], goals: [{ label: 'Qualify 120 Leads', progress: 110, total: 120 }, { label: '60 Discovery Calls', progress: 55, total: 60 }, { label: '₹60L Revenue', progress: 45, total: 60 }] },
+  };
+
+  const stats = statsData[period];
 
   return (
     <div style={{ height: '100%', overflowY: 'auto', background: 'var(--bg)', padding: 'var(--mobile-padding, 40px)' }} className="custom-scroll animate-in">
@@ -86,13 +88,13 @@ const RepPulse = () => {
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--success)', background: 'rgba(16, 185, 129, 0.1)', padding: '4px 10px', borderRadius: 8 }}>+12% vs LW</div>
             </div>
             <div style={{ height: 240, display: 'flex', alignItems: 'flex-end', gap: 12 }}>
-              {[60, 80, 45, 90, 70, 100, 85].map((h, i) => (
+              {stats.trend.map((h, i) => (
                 <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
                   <div style={{ 
                     width: '100%', 
-                    height: `${h * 2}px`, 
+                    height: `${h * 1.5}px`, 
                     background: 'var(--primary)', 
-                    opacity: 0.2 + (h/100)*0.8, 
+                    opacity: 0.2 + (h/Math.max(...stats.trend))*0.8, 
                     borderRadius: '8px 8px 4px 4px',
                     transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                     boxShadow: h > 80 ? '0 4px 12px var(--primary-glow)' : 'none'
@@ -107,11 +109,7 @@ const RepPulse = () => {
             <div style={{ position: 'absolute', top: 0, right: 0, width: '100%', height: '100%', background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 100%)', pointerEvents: 'none' }} />
             <h3 className="text-h3" style={{ margin: '0 0 32px', color: 'white', position: 'relative' }}>Personal Goals</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 32, position: 'relative' }}>
-              {[
-                { label: 'Qualify 20 Leads', progress: 14, total: 20 },
-                { label: '10 Discovery Calls', progress: 8, total: 10 },
-                { label: '₹10L Revenue', progress: 8.4, total: 10 },
-              ].map(g => (
+              {stats.goals.map(g => (
                 <div key={g.label}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 12 }}>
                     <span style={{ color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>{g.label}</span>

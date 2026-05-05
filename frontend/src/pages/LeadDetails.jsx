@@ -117,8 +117,9 @@ const LeadDetails = () => {
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80 }} className="custom-scroll">
-        <div style={{ maxWidth: 800, margin: '0 auto', padding: '24px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80, display: 'flex' }} className="custom-scroll">
+        <div style={{ flex: 1, padding: '24px' }}>
+          <div style={{ maxWidth: 800, margin: '0 auto' }}>
           
           <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center' }}>
             <IntentBadge type={lead.intent} />
@@ -204,6 +205,48 @@ const LeadDetails = () => {
             })}
           </div>
 
+          </div>
+        </div>
+
+        {/* Intelligence Panel (Right Sidebar) */}
+        <div className="desktop-only" style={{ width: 360, background: 'var(--bg-surface)', borderLeft: '1px solid var(--border)', flexDirection: 'column', display: 'flex', flexShrink: 0 }}>
+          <div style={{ padding: '32px 28px', borderBottom: '1px solid var(--border-subtle)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+              <div style={{ padding: 6, background: 'rgba(31, 78, 121, 0.1)', borderRadius: 8 }}>
+                <svg width="18" height="18" fill="var(--primary)" viewBox="0 0 24 24"><path d="M12 2L3 7v10l9 5 9-5V7L12 2z"/></svg>
+              </div>
+              <h3 style={{ fontSize: 12, fontWeight: 900, color: 'var(--primary)', letterSpacing: '0.1em', margin: 0 }}>AI COPILOT INSIGHTS</h3>
+            </div>
+            <p style={{ fontSize: 15, color: 'var(--text)', lineHeight: 1.7, fontStyle: 'italic', fontWeight: 500, background: 'rgba(31, 78, 121, 0.03)', padding: '16px', borderRadius: 16 }}>
+              "Lead is evaluating enterprise migration. Focus on <span style={{ fontWeight: 800, color: 'var(--primary)' }}>API reliability</span> and <span style={{ fontWeight: 800, color: 'var(--primary)' }}>SSO security</span> standards. Ready for pricing negotiation."
+            </p>
+          </div>
+          
+          <div style={{ padding: '32px 28px' }}>
+            <h3 style={{ fontSize: 12, fontWeight: 900, color: 'var(--text-muted)', letterSpacing: '0.1em', marginBottom: 24 }}>DEAL SCORECARD</h3>
+            <div style={{ background: 'var(--bg-subtle)', padding: '24px', borderRadius: 24, border: '1px solid var(--border-subtle)' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8 }}>Projected Value</div>
+              <div style={{ fontSize: 36, fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.03em' }}>₹12.0L</div>
+              <div style={{ 
+                fontSize: 12, fontWeight: 800, color: 'var(--success)', 
+                background: 'rgba(16, 185, 129, 0.1)', padding: '6px 14px', borderRadius: 10, 
+                display: 'inline-block', marginTop: 16, letterSpacing: '0.02em' 
+              }}>92% WIN PROBABILITY</div>
+            </div>
+            
+            <div style={{ marginTop: 40 }}>
+              <h4 style={{ fontSize: 12, fontWeight: 900, color: 'var(--text-muted)', letterSpacing: '0.1em', marginBottom: 20 }}>SUGGESTED ACTION</h4>
+              <div style={{ padding: 24, background: 'var(--text)', borderRadius: 24, boxShadow: 'var(--shadow-lg)', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 100%)' }} />
+                <p style={{ fontSize: 14, color: 'white', margin: 0, fontWeight: 700, lineHeight: 1.5, position: 'relative' }}>Send "Enterprise Security" whitepaper & bulk pricing deck.</p>
+                <button className="btn-primary" style={{ 
+                  marginTop: 20, background: 'white', color: 'var(--text)', 
+                  border: 'none', height: 44, width: '100%', fontSize: 13, fontWeight: 800,
+                  position: 'relative', boxShadow: 'none'
+                }}>Generate Asset Now</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

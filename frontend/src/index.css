@@ -104,6 +104,44 @@ button, a, [role="button"] {
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+/* ── Responsive Scaling (Screen 2-5 Reference) ────────── */
+:root {
+  --font-scale: 1;
+}
+
+@media (max-width: 1024px) {
+  :root { --font-scale: 0.95; }
+  .desktop-only { display: none !important; }
+}
+
+@media (max-width: 768px) {
+  :root { --font-scale: 0.9; }
+  .card { padding: 20px !important; }
+  h1 { font-size: clamp(24px, 5vw, 32px) !important; }
+  .btn-primary, .btn-secondary { height: 40px !important; padding: 0 16px !important; font-size: 12px !important; }
+  
+  /* Shrink icons on mobile */
+  .icon-large { transform: scale(0.85); }
+  .icon-medium { transform: scale(0.9); }
+}
+
+@media (max-width: 480px) {
+  :root { --font-scale: 0.85; }
+  body { font-size: 13px; }
+  .mobile-only { display: block !important; }
+  .hide-on-mobile { display: none !important; }
+}
+
+/* Utility for smooth scaling */
+.animate-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .dark .glass {
   background: rgba(28, 33, 43, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.05);

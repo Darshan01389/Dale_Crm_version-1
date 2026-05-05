@@ -11,11 +11,16 @@ from app.ml.sentiment_service import SentimentResult
 
 def sentiment_openai(notes: str | None, title: str | None) -> SentimentResult | None:
     """
-    GPT-4o-mini (or OPENAI_MODEL) structured sentiment; returns None on failure.
+    LLM (Groq or OpenAI) structured sentiment; returns None on failure.
     """
-    key = (settings.OPENAI_API_KEY or "").strip()
+    is_groq = settings.USE_GROQ_FOR_ALL and (settings.GROQ_API_KEY or "").strip()
+    key = (settings.GROQ_API_KEY if is_groq else settings.OPENAI_API_KEY or "").strip()
+    
     if not key:
         return None
+
+    url = "https://api.groq.com/openai/v1/chat/completions" if is_groq else "https://api.openai.com/v1/chat/completions"
+    model = settings.GROQ_MODEL if is_groq else settings.OPENAI_MODEL
 
     text = " ".join(p for p in [title or "", notes or ""] if p).strip()
     if not text:
@@ -28,7 +33,7 @@ def sentiment_openai(notes: str | None, title: str | None) -> SentimentResult | 
         )
 
     body = {
-        "model": settings.OPENAI_MODEL,
+        "model": model,
         "temperature": 0.2,
         "response_format": {"type": "json_object"},
         "messages": [
@@ -46,7 +51,7 @@ def sentiment_openai(notes: str | None, title: str | None) -> SentimentResult | 
     }
 
     req = urllib.request.Request(
-        "https://api.openai.com/v1/chat/completions",
+        url,
         data=json.dumps(body).encode("utf-8"),
         headers={
             "Authorization": f"Bearer {key}",

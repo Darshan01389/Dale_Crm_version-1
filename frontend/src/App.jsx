@@ -26,6 +26,8 @@ import TeamReports from './pages/TeamReports';
 import HelpSupport from './pages/HelpSupport';
 import Billing from './pages/Billing';
 import ChannelSettings from './pages/ChannelSettings';
+import ForgotPassword from './pages/ForgotPassword';
+import AboutCommunity from './pages/AboutCommunity';
 import OfflineBanner from './components/OfflineBanner';
 import { ToastProvider } from './contexts/ToastContext';
 import { PersonaProvider } from './contexts/PersonaContext';
@@ -102,6 +104,7 @@ const App = () => (
         {/* Public */}
         <Route path="/login"    element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* Home — role-based */}
         <Route
@@ -133,7 +136,7 @@ const App = () => (
         {protected_route('/coach',       CallCoach,       ['Team Lead', 'Owner / Admin'])}
         {protected_route('/forecast',    Forecast,        ['Team Lead', 'Owner / Admin'])}
         {protected_route('/settings',    Settings,        ['Sales Rep', 'Team Lead', 'Owner / Admin'])}
-        {protected_route('/welcome',     WelcomeWizard)}
+        <Route path="/welcome" element={<PrivateRoute element={<WelcomeWizard />} />} />
         {protected_route('/calendar',    Calendar,        ['Sales Rep', 'Team Lead'])}
         {protected_route('/leads/:id',   LeadDetails,     ['Sales Rep', 'Team Lead', 'Owner / Admin'])}
         {protected_route('/sources',     LeadSourceHub,   ['Owner / Admin'])}
@@ -143,6 +146,7 @@ const App = () => (
         {protected_route('/help',        HelpSupport,     ['Sales Rep', 'Team Lead', 'Owner / Admin'])}
         {protected_route('/billing',     Billing,         ['Owner / Admin'])}
         {protected_route('/settings/channels', ChannelSettings, ['Owner / Admin'])}
+        {protected_route('/community',   AboutCommunity,  ['Sales Rep', 'Team Lead', 'Owner / Admin'])}
 
         {/* Pipeline — responsive (Kanban desktop / MobilePipeline mobile) */}
         <Route

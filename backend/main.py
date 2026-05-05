@@ -37,6 +37,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Ensure tables exist
+from app.core.database import Base, engine
+from app.models import user, team, company, lead, deal, activity, pipeline_stage, voice_recording
+Base.metadata.create_all(bind=engine)
+
 from app.routes.auth import router as auth_router
 from app.routes.leads import router as lead_router
 from app.api.voice import router as voice_router
@@ -55,6 +60,17 @@ app.include_router(analytics.router)
 from app.routes.teams import router as team_router
 app.include_router(team_router)
 app.include_router(ai_router)
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    import traceback
+    from fastapi.responses import JSONResponse
+    print(f"ERROR: {str(exc)}")
+    traceback.print_exc()
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc), "traceback": traceback.format_exc()}
+    )
 
 @app.get("/")
 def root():

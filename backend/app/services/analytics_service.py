@@ -30,11 +30,16 @@ def build_db_dashboard(db: Session, user: User, days: int = 30) -> AnalyticsDash
         base_filter_deal = (Deal.owner_id == user.id) & (Deal.created_at >= since_date)
         base_filter_act = (Activity.owner_id == user.id) & (Activity.occurred_at >= since_date)
     elif user.role == "Team Lead":
-        member_ids = db.query(User.id).filter(User.team_id == user.team_id).all()
-        member_ids = [m[0] for m in member_ids]
-        base_filter_lead = (Lead.owner_id.in_(member_ids)) & (Lead.created_at >= since_date)
-        base_filter_deal = (Deal.owner_id.in_(member_ids)) & (Deal.created_at >= since_date)
-        base_filter_act = (Activity.owner_id.in_(member_ids)) & (Activity.occurred_at >= since_date)
+        if user.team_id:
+            member_ids = db.query(User.id).filter(User.team_id == user.team_id).all()
+            member_ids = [m[0] for m in member_ids]
+            base_filter_lead = (Lead.owner_id.in_(member_ids)) & (Lead.created_at >= since_date)
+            base_filter_deal = (Deal.owner_id.in_(member_ids)) & (Deal.created_at >= since_date)
+            base_filter_act = (Activity.owner_id.in_(member_ids)) & (Activity.occurred_at >= since_date)
+        else:
+            base_filter_lead = (Lead.owner_id == user.id) & (Lead.created_at >= since_date)
+            base_filter_deal = (Deal.owner_id == user.id) & (Deal.created_at >= since_date)
+            base_filter_act = (Activity.owner_id == user.id) & (Activity.occurred_at >= since_date)
     else: # Owner / Admin
         base_filter_lead = (Lead.created_at >= since_date)
         base_filter_deal = (Deal.created_at >= since_date)
@@ -162,80 +167,109 @@ def build_db_dashboard(db: Session, user: User, days: int = 30) -> AnalyticsDash
 
 def build_dataset_dashboard() -> AnalyticsDashboard:
     csv_path = Path(settings.MERGED_LEAD_DATASET_PATH)
-    df = pd.read_csv(csv_path)
-    total_leads = len(df)
-    avg_score = float(df["lead_score"].mean()) if total_leads else None
-    converted = int(df["converted"].sum()) if "converted" in df.columns else 0
-    not_converted = total_leads - converted
-    win_rate = round(100.0 * converted / total_leads, 2) if total_leads else None
+    if not csv_path.exists():
+        # Return empty dashboard if CSV also missing
+        return AnalyticsDashboard(
+            leads_total=0,
+            leads_avg_ai_score=0,
+            model_accuracy_pct=0,
+            model_rmse=0,
+            model_r2=0,
+            estimated_cost=0,
+            sentiment_breakdown=SentimentBreakdown(positive=0, neutral=0, negative=0, unknown=0),
+            current_sales_progress=SalesProgress(deals_open=0, deals_won=0, deals_lost=0, win_rate_pct=0, pipeline_progress_pct=0),
+            deals_open=0, deals_won=0, deals_lost=0, win_rate_pct=0, revenue_won=0.0, weighted_pipeline_value=0.0,
+            activities_last_7_days=0, funnel=[]
+        )
 
-    if "lead_score" in df.columns:
-        sentiment_values = pd.cut(
-            df["lead_score"].fillna(0.0),
-            bins=[-1.0, 40.0, 75.0, float("inf")],
-            labels=["negative", "neutral", "positive"],
-        ).astype(object)
-    else:
-        sentiment_values = pd.Series(["unknown"] * total_leads)
+    try:
+        df = pd.read_csv(csv_path)
+        total_leads = len(df)
+        avg_score = float(df["lead_score"].mean()) if total_leads else None
+        converted = int(df["converted"].sum()) if "converted" in df.columns else 0
+        not_converted = total_leads - converted
+        win_rate = round(100.0 * converted / total_leads, 2) if total_leads else None
 
-    sentiment_counts = {
-        "positive": int((sentiment_values == "positive").sum()),
-        "neutral": int((sentiment_values == "neutral").sum()),
-        "negative": int((sentiment_values == "negative").sum()),
-        "unknown": int((sentiment_values == "unknown").sum()),
-    }
-    ml = ml_status()
-    estimated_cost = round(total_leads * 12.5, 2)
-    funnel = []
-    if "lead_tier" in df.columns:
-        for label, count in df["lead_tier"].fillna("unknown").value_counts().items():
+        if "lead_score" in df.columns:
+            sentiment_values = pd.cut(
+                df["lead_score"].fillna(0.0),
+                bins=[-1.0, 40.0, 75.0, float("inf")],
+                labels=["negative", "neutral", "positive"],
+            ).astype(object)
+        else:
+            sentiment_values = pd.Series(["unknown"] * total_leads)
+
+        sentiment_counts = {
+            "positive": int((sentiment_values == "positive").sum()),
+            "neutral": int((sentiment_values == "neutral").sum()),
+            "negative": int((sentiment_values == "negative").sum()),
+            "unknown": int((sentiment_values == "unknown").sum()),
+        }
+        ml = ml_status()
+        estimated_cost = round(total_leads * 12.5, 2)
+        funnel = []
+        if "lead_tier" in df.columns:
+            for label, count in df["lead_tier"].fillna("unknown").value_counts().items():
+                funnel.append(
+                    StageFunnelItem(
+                        stage_key=label,
+                        label=label.title(),
+                        open_deals=int(count),
+                        open_pipeline_value=0.0,
+                    )
+                )
+        else:
             funnel.append(
                 StageFunnelItem(
-                    stage_key=label,
-                    label=label.title(),
-                    open_deals=int(count),
+                    stage_key="dataset",
+                    label="Dataset",
+                    open_deals=total_leads,
                     open_pipeline_value=0.0,
                 )
             )
-    else:
-        funnel.append(
-            StageFunnelItem(
-                stage_key="dataset",
-                label="Dataset",
-                open_deals=total_leads,
-                open_pipeline_value=0.0,
-            )
-        )
 
-    return AnalyticsDashboard(
-        leads_total=int(total_leads),
-        leads_avg_ai_score=float(avg_score) if avg_score is not None else None,
-        model_accuracy_pct=ml.get("accuracy_pct"),
-        model_rmse=ml.get("score_rmse"),
-        model_r2=ml.get("score_r2"),
-        estimated_cost=float(estimated_cost),
-        sentiment_breakdown=SentimentBreakdown(
-            positive=sentiment_counts["positive"],
-            neutral=sentiment_counts["neutral"],
-            negative=sentiment_counts["negative"],
-            unknown=sentiment_counts["unknown"],
-        ),
-        current_sales_progress=SalesProgress(
+        return AnalyticsDashboard(
+            leads_total=int(total_leads),
+            leads_avg_ai_score=float(avg_score) if avg_score is not None else None,
+            model_accuracy_pct=ml.get("accuracy_pct"),
+            model_rmse=ml.get("score_rmse"),
+            model_r2=ml.get("score_r2"),
+            estimated_cost=float(estimated_cost),
+            sentiment_breakdown=SentimentBreakdown(
+                positive=sentiment_counts["positive"],
+                neutral=sentiment_counts["neutral"],
+                negative=sentiment_counts["negative"],
+                unknown=sentiment_counts["unknown"],
+            ),
+            current_sales_progress=SalesProgress(
+                deals_open=int(not_converted),
+                deals_won=int(converted),
+                deals_lost=0,
+                win_rate_pct=win_rate,
+                pipeline_progress_pct=win_rate,
+            ),
             deals_open=int(not_converted),
             deals_won=int(converted),
             deals_lost=0,
             win_rate_pct=win_rate,
-            pipeline_progress_pct=win_rate,
-        ),
-        deals_open=int(not_converted),
-        deals_won=int(converted),
-        deals_lost=0,
-        win_rate_pct=win_rate,
-        revenue_won=0.0,
-        weighted_pipeline_value=0.0,
-        activities_last_7_days=0,
-        funnel=funnel,
-    )
+            revenue_won=0.0,
+            weighted_pipeline_value=0.0,
+            activities_last_7_days=0,
+            funnel=funnel,
+        )
+    except Exception:
+        return AnalyticsDashboard(
+            leads_total=0,
+            leads_avg_ai_score=0,
+            model_accuracy_pct=0,
+            model_rmse=0,
+            model_r2=0,
+            estimated_cost=0,
+            sentiment_breakdown=SentimentBreakdown(positive=0, neutral=0, negative=0, unknown=0),
+            current_sales_progress=SalesProgress(deals_open=0, deals_won=0, deals_lost=0, win_rate_pct=0, pipeline_progress_pct=0),
+            deals_open=0, deals_won=0, deals_lost=0, win_rate_pct=0, revenue_won=0.0, weighted_pipeline_value=0.0,
+            activities_last_7_days=0, funnel=[]
+        )
 
 def build_dashboard(db: Session, user: User, date_range: str = "30 Days") -> AnalyticsDashboard:
     # Map range string to days
@@ -248,7 +282,11 @@ def build_dashboard(db: Session, user: User, date_range: str = "30 Days") -> Ana
     days = days_map.get(date_range, 30)
     
     try:
-        return build_db_dashboard(db, user, days=days)
+        dash = build_db_dashboard(db, user, days=days)
+        # If DB is empty, try to show dataset instead so UI doesn't look broken
+        if dash.leads_total == 0:
+            return build_dataset_dashboard()
+        return dash
     except Exception:
         return build_dataset_dashboard()
 

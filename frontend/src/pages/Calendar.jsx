@@ -3,9 +3,10 @@ import React, { useState } from 'react';
 const Calendar = () => {
   const [view, setView] = useState('Week');
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showNewMeeting, setShowNewMeeting] = useState(false);
   
   // Use a proper date state for navigation
-  const [baseDate, setBaseDate] = useState(new Date('2026-05-04')); // Starting Monday
+  const [baseDate, setBaseDate] = useState(new Date()); // Use current date as base
 
   const getWeekDays = (start) => {
     const days = [];
@@ -45,16 +46,26 @@ const Calendar = () => {
   };
 
   const handleToday = () => {
-    // For demo purposes, we keep it to May 4th week if today is different
-    setBaseDate(new Date('2026-05-04'));
+    setBaseDate(new Date());
   };
 
+  const [showReschedule, setShowReschedule] = useState(false);
+  const [rescheduleData, setRescheduleData] = useState({ date: '', time: '' });
+
   const events = [
-    { id: 1, day: 'MON', time: '10 AM', title: 'Sarah Jenkins', type: 'Product Demo', status: 'confirmed', description: 'Showcasing the new WhatsApp integration features.' },
-    { id: 2, day: 'TUE', time: '2 PM', title: 'Michael Chen', type: 'Discovery Call', status: 'confirmed', description: 'Initial discovery to understand procurement needs.' },
-    { id: 3, day: 'WED', time: '11 AM', title: 'Priya Patel', type: 'Pricing Review', status: 'awaiting', description: 'Reviewing the enterprise tier proposal.' },
-    { id: 4, day: 'THU', time: '4 PM', title: 'Rajesh Kumar', type: 'Follow-up', status: 'confirmed', description: 'Checking in after the initial pilot period.' },
+    { id: 1, day: 'MON', time: '10 AM', title: 'Sarah Jenkins', type: 'Product Demo', status: 'confirmed', description: 'Showcasing the new WhatsApp integration features.', meeting_link: 'https://meet.google.com/abc-defg-hij' },
+    { id: 2, day: 'TUE', time: '2 PM', title: 'Michael Chen', type: 'Discovery Call', status: 'confirmed', description: 'Initial discovery to understand procurement needs.', meeting_link: 'https://wa.me/919876543210' },
+    { id: 3, day: 'WED', time: '11 AM', title: 'Priya Patel', type: 'Pricing Review', status: 'awaiting', description: 'Reviewing the enterprise tier proposal.', meeting_link: 'https://meet.google.com/xyz-pdqr-stuv' },
+    { id: 4, day: 'THU', time: '4 PM', title: 'Rajesh Kumar', type: 'Follow-up', status: 'confirmed', description: 'Checking in after the initial pilot period.', meeting_link: 'https://wa.me/919876543210' },
   ];
+
+  const handleReschedule = () => {
+    // In a real app, we'd update the event in state or database
+    console.log(`Rescheduling ${selectedEvent.title} to ${rescheduleData.date} at ${rescheduleData.time}`);
+    setShowReschedule(false);
+    setSelectedEvent(null);
+    alert(`Meeting rescheduled to ${rescheduleData.date} at ${rescheduleData.time}`);
+  };
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--bg)', overflow: 'hidden' }}>
@@ -100,7 +111,7 @@ const Calendar = () => {
               }}>{v}</button>
             ))}
           </div>
-          <button className="btn-primary" style={{ padding: '10px 20px', borderRadius: 10, fontWeight: 800 }}>
+          <button onClick={() => setShowNewMeeting(true)} className="btn-primary" style={{ padding: '10px 20px', borderRadius: 10, fontWeight: 800 }}>
             + New Meeting
           </button>
         </div>
@@ -172,6 +183,10 @@ const Calendar = () => {
                         <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginTop: 4 }}>
                           {event.type}
                         </div>
+                        {/* Reschedule Icon */}
+                        <div style={{ position: 'absolute', bottom: 8, right: 8, fontSize: 16, color: 'var(--text-muted)', opacity: 0.6 }}>
+                          ↩️
+                        </div>
                       </div>
                     )}
                   </div>
@@ -194,41 +209,173 @@ const Calendar = () => {
         </div>
       </div>
 
-      {/* Event Details Popover */}
-      {selectedEvent && (
+      {/* Event Details & Reschedule Side-by-Side */}
+      {(selectedEvent || showReschedule) && (
         <div 
-          style={{ position: 'fixed', inset: 0, zIndex: 4000, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          onClick={() => setSelectedEvent(null)}
+          style={{ position: 'fixed', inset: 0, zIndex: 4000, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}
+          onClick={() => { setSelectedEvent(null); setShowReschedule(false); }}
         >
           <div 
-            style={{ width: '100%', maxWidth: 400, background: 'var(--bg-surface)', borderRadius: 16, padding: 32, boxShadow: 'var(--shadow-xl)' }}
+            className="animate-in"
+            style={{ 
+              width: '100%', 
+              maxWidth: showReschedule ? 800 : 400, 
+              background: 'var(--bg-surface)', 
+              borderRadius: 24, 
+              display: 'flex',
+              overflow: 'hidden',
+              boxShadow: 'var(--shadow-xl)', 
+              border: '1px solid var(--border)',
+              transition: 'max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
             onClick={e => e.stopPropagation()}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 900, color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: 8 }}>{selectedEvent.type.toUpperCase()}</div>
-                <h3 className="text-h2" style={{ margin: 0 }}>{selectedEvent.title}</h3>
+            {/* Details Panel */}
+            <div style={{ flex: 1, padding: 32, borderRight: showReschedule ? '1px solid var(--border)' : 'none' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
+                <div>
+                  <div style={{ fontSize: 11, fontWeight: 900, color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: 8 }}>{selectedEvent?.type?.toUpperCase() || 'EVENT'}</div>
+                  <h3 className="text-h2" style={{ margin: 0, fontSize: 24 }}>{selectedEvent?.title}</h3>
+                </div>
+                {!showReschedule && <button onClick={() => setSelectedEvent(null)} style={{ background: 'none', border: 'none', fontSize: 24, color: 'var(--text-muted)', cursor: 'pointer' }}>×</button>}
               </div>
-              <button onClick={() => setSelectedEvent(null)} style={{ background: 'none', border: 'none', fontSize: 24, color: 'var(--text-muted)', cursor: 'pointer' }}>×</button>
-            </div>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 32 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ fontSize: 20 }}>🕒</span>
-                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Today, {selectedEvent.time} – {selectedEvent.time.replace('AM', 'PM')} (45m)</span>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 32 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>🕒</div>
+                  <div>
+                     <div style={{ fontSize: 14, fontWeight: 800 }}>Today, {selectedEvent?.time}</div>
+                     <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>Duration: 45 minutes</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>📍</div>
+                  <div>
+                     <div style={{ fontSize: 14, fontWeight: 800 }}>Meeting Channel</div>
+                     <div style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 600 }}>Google Meet / WhatsApp</div>
+                  </div>
+                </div>
+                <div style={{ padding: '16px', background: 'var(--bg-subtle)', borderRadius: 12, fontSize: 14, color: 'var(--text)', lineHeight: 1.6, border: '1px solid var(--border-subtle)' }}>
+                  {selectedEvent?.description}
+                </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ fontSize: 20 }}>📍</span>
-                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>Google Meet / WhatsApp Audio</span>
-              </div>
-              <div style={{ padding: '16px', background: 'var(--bg-subtle)', borderRadius: 12, fontSize: 14, color: 'var(--text)', lineHeight: 1.6 }}>
-                {selectedEvent.description}
+
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button 
+                  className="btn-primary" 
+                  onClick={() => window.open(selectedEvent?.meeting_link, '_blank')}
+                  style={{ flex: 1.5, padding: '14px', borderRadius: 12, fontSize: 15, fontWeight: 800 }}
+                >
+                  Join Meeting
+                </button>
+                {!showReschedule && (
+                  <button 
+                    className="btn-secondary" 
+                    onClick={() => setShowReschedule(true)}
+                    style={{ flex: 1, padding: '14px', borderRadius: 12, fontSize: 15, fontWeight: 800 }}
+                  >
+                    Reschedule
+                  </button>
+                )}
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 12 }}>
-              <button className="btn-primary" style={{ flex: 1, padding: '12px', borderRadius: 10 }}>Join Meeting</button>
-              <button className="btn-secondary" style={{ flex: 1, padding: '12px', borderRadius: 10 }}>Reschedule</button>
+            {/* Reschedule Panel (Pops up beside) */}
+            {showReschedule && (
+              <div style={{ flex: 1, padding: 32, background: 'var(--bg-subtle)', animation: 'fadeInRight 0.3s ease' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Reschedule</h3>
+                  <button onClick={() => setShowReschedule(false)} style={{ background: 'none', border: 'none', fontSize: 20, color: 'var(--text-muted)', cursor: 'pointer' }}>×</button>
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 900, color: 'var(--text-muted)', letterSpacing: 1, display: 'block', marginBottom: 8 }}>NEW DATE</label>
+                    <input 
+                      type="date" 
+                      className="input" 
+                      value={rescheduleData.date}
+                      onChange={e => setRescheduleData({...rescheduleData, date: e.target.value})}
+                      style={{ background: 'white' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 900, color: 'var(--text-muted)', letterSpacing: 1, display: 'block', marginBottom: 8 }}>NEW TIME</label>
+                    <input 
+                      type="time" 
+                      className="input" 
+                      value={rescheduleData.time}
+                      onChange={e => setRescheduleData({...rescheduleData, time: e.target.value})}
+                      style={{ background: 'white' }}
+                    />
+                  </div>
+                  
+                  <button 
+                    onClick={handleReschedule} 
+                    className="btn-primary" 
+                    style={{ height: 52, borderRadius: 12, fontWeight: 800, marginTop: 12 }}
+                    disabled={!rescheduleData.date || !rescheduleData.time}
+                  >
+                    Confirm Reschedule →
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* New Meeting Modal */}
+      {showNewMeeting && (
+        <div 
+          style={{ position: 'fixed', inset: 0, zIndex: 5000, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}
+          onClick={() => setShowNewMeeting(false)}
+        >
+          <div 
+            className="animate-in"
+            style={{ width: '100%', maxWidth: 450, background: 'var(--bg-surface)', borderRadius: 20, padding: 32, boxShadow: 'var(--shadow-xl)', border: '1px solid var(--border)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>Schedule New Meeting</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 24 }}>Set up a new calendar event for your prospect.</p>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 900, color: 'var(--text-muted)', letterSpacing: 1, display: 'block', marginBottom: 8 }}>PROSPECT NAME</label>
+                <input placeholder="e.g. John Doe" className="input" />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 900, color: 'var(--text-muted)', letterSpacing: 1, display: 'block', marginBottom: 8 }}>MEETING TITLE</label>
+                <input placeholder="e.g. Product Walkthrough" className="input" />
+              </div>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 11, fontWeight: 900, color: 'var(--text-muted)', letterSpacing: 1, display: 'block', marginBottom: 8 }}>DATE</label>
+                  <input type="date" className="input" />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 11, fontWeight: 900, color: 'var(--text-muted)', letterSpacing: 1, display: 'block', marginBottom: 8 }}>TIME</label>
+                  <input type="time" className="input" />
+                </div>
+              </div>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 900, color: 'var(--text-muted)', letterSpacing: 1, display: 'block', marginBottom: 8 }}>MEETING LINK (WHATSAPP/GOOGLE MEET)</label>
+                <input placeholder="https://meet.google.com/..." className="input" />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 900, color: 'var(--text-muted)', letterSpacing: 1, display: 'block', marginBottom: 8 }}>DESCRIPTION</label>
+                <textarea placeholder="Agenda or notes..." className="input" style={{ height: 80, resize: 'none' }} />
+              </div>
+              <button 
+                onClick={() => {
+                  alert('Meeting scheduled successfully!');
+                  setShowNewMeeting(false);
+                }} 
+                className="btn-primary" 
+                style={{ height: 52, marginTop: 12, borderRadius: 12, fontSize: 16, fontWeight: 800 }}
+              >
+                Schedule Meeting →
+              </button>
             </div>
           </div>
         </div>

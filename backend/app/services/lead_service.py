@@ -140,9 +140,12 @@ def list_priority_leads(
         q = q.filter(Lead.owner_id == user.id)
     elif user.role == "Team Lead":
         # Get team member IDs
-        member_ids = db.query(User.id).filter(User.team_id == user.team_id).all()
-        member_ids = [m[0] for m in member_ids]
-        q = q.filter(Lead.owner_id.in_(member_ids))
+        if user.team_id:
+            member_ids = db.query(User.id).filter(User.team_id == user.team_id).all()
+            member_ids = [m[0] for m in member_ids]
+            q = q.filter(Lead.owner_id.in_(member_ids))
+        else:
+            q = q.filter(Lead.owner_id == user.id)
     # Owner / Admin sees all
 
     q = (
@@ -243,9 +246,12 @@ def list_leads(
     if user.role == "Sales Rep":
         q = q.filter(Lead.owner_id == user.id)
     elif user.role == "Team Lead":
-        member_ids = db.query(User.id).filter(User.team_id == user.team_id).all()
-        member_ids = [m[0] for m in member_ids]
-        q = q.filter(Lead.owner_id.in_(member_ids))
+        if user.team_id:
+            member_ids = db.query(User.id).filter(User.team_id == user.team_id).all()
+            member_ids = [m[0] for m in member_ids]
+            q = q.filter(Lead.owner_id.in_(member_ids))
+        else:
+            q = q.filter(Lead.owner_id == user.id)
     # Owner / Admin sees all
 
     q = (

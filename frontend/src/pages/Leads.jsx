@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AddContactModal from '../components/AddContactModal';
 
 const MOCK_LEADS = [
@@ -24,6 +25,7 @@ const stageColors = {
 };
 
 const Leads = () => {
+  const navigate = useNavigate();
   const [leads, setLeads] = useState([]);
   const [search, setSearch] = useState('');
   const [stageFilter, setStageFilter] = useState('All');
@@ -173,7 +175,13 @@ const Leads = () => {
                 <td style={{ padding: '20px 24px', fontWeight: 800, color: 'var(--text)', fontSize: 16, borderTop: '1px solid var(--border-subtle)', borderBottom: '1px solid var(--border-subtle)' }}>{lead.value}</td>
                 <td style={{ padding: '20px 24px', color: 'var(--text-muted)', fontSize: 13, fontWeight: 600, borderTop: '1px solid var(--border-subtle)', borderBottom: '1px solid var(--border-subtle)' }}>{lead.lastContact}</td>
                 <td style={{ padding: '20px 24px', borderRadius: '0 16px 16px 0', border: '1px solid var(--border-subtle)', borderLeft: 'none', textAlign: 'right' }}>
-                  <button className="btn-secondary" style={{ height: 36, padding: '0 16px', fontSize: 12, fontWeight: 700 }}>Open Profile</button>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); navigate(`/leads/${lead.id}`); }}
+                    className="btn-secondary" 
+                    style={{ height: 36, padding: '0 16px', fontSize: 12, fontWeight: 700 }}
+                  >
+                    Open Profile
+                  </button>
                 </td>
               </tr>
             ))}

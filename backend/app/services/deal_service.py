@@ -121,9 +121,12 @@ def list_deals(
     if user.role == "Sales Rep":
         q = q.filter(Deal.owner_id == user.id)
     elif user.role == "Team Lead":
-        member_ids = db.query(User.id).filter(User.team_id == user.team_id).all()
-        member_ids = [m[0] for m in member_ids]
-        q = q.filter(Deal.owner_id.in_(member_ids))
+        if user.team_id:
+            member_ids = db.query(User.id).filter(User.team_id == user.team_id).all()
+            member_ids = [m[0] for m in member_ids]
+            q = q.filter(Deal.owner_id.in_(member_ids))
+        else:
+            q = q.filter(Deal.owner_id == user.id)
     # Owner / Admin sees all
 
     if outcome:

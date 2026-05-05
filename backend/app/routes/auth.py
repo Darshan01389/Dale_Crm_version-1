@@ -16,7 +16,6 @@ from app.models.user import User
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
-# ── REGISTER ─────────────────────────────────────────────────────
 @router.post("/register", response_model=UserResponse, status_code=201)
 def register(user_data: UserRegister, db: Session = Depends(get_db)):
     """

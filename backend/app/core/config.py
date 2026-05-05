@@ -42,9 +42,15 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str | None = None
     SMTP_FROM: str | None = None
     ALERT_EMAIL_TO: str | None = None
-    SEND_HIGH_SCORE_ALERTS: bool = False
+    
+    # Global AI Toggle
+    USE_GROQ_FOR_ALL: bool = True
 
-    model_config = SettingsConfigDict(env_file=".env")
+    # Groq API for chatbot
+    GROQ_API_KEY: str | None = None
+    GROQ_MODEL: str = "llama-3.1-8b-instant"
+
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 # Create one instance — import this everywhere
 settings = Settings()

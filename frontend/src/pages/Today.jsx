@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import IntentBadge from '../components/IntentBadge';
 import EmptyState from '../components/EmptyState';
@@ -27,7 +27,42 @@ const SectionLabel = ({ text, count, color }) => (
 
 const Today = () => {
   const navigate = useNavigate();
-  const allEmpty = !CALL_FIRST.length && !DONT_COOL.length && !SCHEDULED.length;
+  const [loading, setLoading] = useState(true);
+  const [priorityLeads, setPriorityLeads] = useState([]);
+  const [scheduled, setScheduled] = useState([]); // Still mock for now, but wired for data
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem('voiceiq_token');
+        const res = await fetch('/api/leads/priority', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setPriorityLeads(data);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const callFirst = priorityLeads.filter(l => (l.ai_score || 0) >= 70);
+  const atRisk = priorityLeads.filter(l => (l.ai_score || 0) < 70 && (l.ai_score || 0) > 0);
+
+  const allEmpty = !callFirst.length && !atRisk.length && !scheduled.length;
+
+  if (loading) {
+    return (
+      <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="spinner" style={{ width: 40, height: 40, border: '4px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+      </div>
+    );
+  }
 
   return (
     <div style={{ height: '100%', overflowY: 'auto', background: 'var(--bg)' }} className="custom-scroll animate-in">
@@ -41,16 +76,16 @@ const Today = () => {
             ctaLabel="Go to Inbox" onCta={() => navigate('/inbox')} />
         )}
 
-        {CALL_FIRST.length > 0 && (
+        {callFirst.length > 0 && (
           <div style={{ marginBottom: 40 }}>
-            <SectionLabel text={`Call First · ${CALL_FIRST.length}`} count={CALL_FIRST.length} color="#1F6E43" />
+            <SectionLabel text={`Call First · ${callFirst.length}`} count={callFirst.length} color="#1F6E43" />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {CALL_FIRST.map(item => (
-                <div key={item.id} onClick={() => navigate(`/leads/${item.contactId}`)}
+              {callFirst.map(item => (
+                <div key={item.id} onClick={() => navigate(`/leads/${item.id}`)}
                   style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', background: 'var(--bg-surface)', borderRadius: 14, border: '1px solid var(--border-subtle)', cursor: 'pointer', minHeight: 60, boxShadow: 'var(--shadow-sm)' }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>{item.name}</div>
-                    <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>{item.reason}</div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>{item.title}</div>
+                    <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>{item.ai_score_summary || 'AI Score: ' + item.ai_score}</div>
                   </div>
                   <IntentBadge type="HIGH_INTENT" />
                   <span style={{ color: 'var(--text-muted)', fontSize: 16 }}>›</span>
@@ -60,16 +95,16 @@ const Today = () => {
           </div>
         )}
 
-        {DONT_COOL.length > 0 && (
+        {atRisk.length > 0 && (
           <div style={{ marginBottom: 40 }}>
-            <SectionLabel text={`Don't Let These Cool · ${DONT_COOL.length}`} count={DONT_COOL.length} color="#B4670F" />
+            <SectionLabel text={`Don't Let These Cool · ${atRisk.length}`} count={atRisk.length} color="#B4670F" />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {DONT_COOL.map(item => (
-                <div key={item.id} onClick={() => navigate(`/leads/${item.contactId}`)}
+              {atRisk.map(item => (
+                <div key={item.id} onClick={() => navigate(`/leads/${item.id}`)}
                   style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '16px 20px', background: 'var(--bg-surface)', borderRadius: 14, border: '1px solid var(--border-subtle)', cursor: 'pointer', minHeight: 60, boxShadow: 'var(--shadow-sm)' }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>{item.name}</div>
-                    <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>{item.reason}</div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>{item.title}</div>
+                    <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>{item.ai_score_summary || 'Potential deal at risk'}</div>
                   </div>
                   <IntentBadge type="AT_RISK" />
                   <span style={{ color: 'var(--text-muted)', fontSize: 16 }}>›</span>
@@ -79,12 +114,12 @@ const Today = () => {
           </div>
         )}
 
-        {SCHEDULED.length > 0 && (
+        {scheduled.length > 0 && (
           <div style={{ marginBottom: 40 }}>
-            <SectionLabel text={`Scheduled · ${SCHEDULED.length}`} count={SCHEDULED.length} color="#1F4E79" />
+            <SectionLabel text={`Scheduled · ${scheduled.length}`} count={scheduled.length} color="#1F4E79" />
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {SCHEDULED.map(item => (
-                <div key={item.id} onClick={() => navigate(`/leads/${item.contactId}`)}
+              {scheduled.map(item => (
+                <div key={item.id} onClick={() => navigate(`/leads/${item.id}`)}
                   style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 4px', borderBottom: '1px solid var(--border-subtle)', cursor: 'pointer', minHeight: 44 }}>
                   <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)', width: 64, flexShrink: 0 }}>{item.time}</span>
                   <span style={{ fontSize: 13, color: 'var(--text)', flex: 1 }}>{item.task}</span>
@@ -95,6 +130,7 @@ const Today = () => {
           </div>
         )}
       </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 };
