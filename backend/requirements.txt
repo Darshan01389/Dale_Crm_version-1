@@ -1,0 +1,17 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+pydantic-settings
+python-jose[cryptography]
+passlib
+psycopg2-binary
+pandas
+scikit-learn
+joblib
+python-multipart
+openai
+pydub
+librosa
+vaderSentiment
+xgboost
+APScheduler

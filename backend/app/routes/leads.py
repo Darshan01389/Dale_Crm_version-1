@@ -1,0 +1,155 @@
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
+
+from app.core.database import get_db
+from app.core.dependencies import get_current_user
+from app.models.user import User
+from app.schemas.lead import LeadCreate, LeadResponse, LeadUpdate, LeadIngest, WhatsAppMessageRequest, WhatsAppFeedback, LeadReportResponse
+
+from app.services import lead_service
+
+router = APIRouter(prefix="/leads", tags=["Leads"])
+
+
+@router.get("/{lead_id}/report", response_model=LeadReportResponse)
+def get_lead_report(
+    lead_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Get a comprehensive report for a lead including activities and recordings."""
+    return lead_service.get_lead_report(db, lead_id, current_user)
+
+@router.get("/{lead_id}/ai-suggest")
+def suggest_reply(
+    lead_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Generate an AI drafted response based on timeline history."""
+    report = lead_service.get_lead_report(db, lead_id, current_user)
+    from app.services.openai_message_service import ai_suggest_reply
+    draft = ai_suggest_reply(report["lead"], report["activities"], report["voice_recordings"])
+    return {"draft": draft}
+
+
+@router.post("/{lead_id}/assign/{user_id}")
+def assign_lead(
+    lead_id: UUID,
+    user_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return lead_service.assign_lead(db, lead_id, user_id, current_user.id)
+
+from app.services.ai_distribution import AIDistributionService
+from pydantic import BaseModel
+from typing import List
+
+class AIDistributeRequest(BaseModel):
+    lead_ids: List[UUID]
+
+@router.post("/distribute-ai")
+def distribute_leads_ai(
+    body: AIDistributeRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Distribute leads using AI matching and capacity management."""
+    if current_user.role not in ["Owner / Admin", "Team Lead"]:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="Only managers can distribute leads.")
+    return AIDistributionService.distribute_leads(db, [str(lid) for lid in body.lead_ids], str(current_user.id))
+
+@router.post("", response_model=LeadResponse, status_code=201)
+def create_lead(
+    body: LeadCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Create a lead. AI (or heuristic) scoring runs automatically on create."""
+    return lead_service.create_lead(db, current_user, body)
+
+
+@router.get("", response_model=list[LeadResponse])
+def list_leads(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+):
+    return lead_service.list_leads(db, current_user, skip=skip, limit=limit)
+
+
+@router.get("/{lead_id}", response_model=LeadResponse)
+def get_lead(
+    lead_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return lead_service.get_lead(db, lead_id, current_user)
+
+
+@router.patch("/{lead_id}", response_model=LeadResponse)
+def update_lead(
+    lead_id: UUID,
+    body: LeadUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return lead_service.update_lead(db, lead_id, current_user, body)
+
+
+@router.delete("/{lead_id}", status_code=204)
+def delete_lead(
+    lead_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    lead_service.delete_lead(db, lead_id, current_user)
+
+
+@router.post("/ingest", response_model=LeadResponse, status_code=201)
+def ingest_lead(
+    body: LeadIngest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Ingest a lead from raw text using AI extraction."""
+    return lead_service.ingest_lead(db, current_user, body)
+
+
+@router.get("/priority", response_model=list[LeadResponse])
+def list_priority_leads(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    limit: int = Query(50, ge=1, le=100),
+):
+    """List leads prioritized by AI score and engagement."""
+    return lead_service.list_priority_leads(db, current_user, limit=limit)
+
+
+@router.post("/{lead_id}/whatsapp", response_model=LeadResponse)
+def send_whatsapp_message(
+    lead_id: UUID,
+    body: WhatsAppMessageRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Send a WhatsApp message to a lead."""
+    return lead_service.send_whatsapp_for_lead(
+        db, lead_id, current_user, body.message, body.purpose
+    )
+
+
+@router.post("/{lead_id}/whatsapp/feedback", response_model=LeadResponse)
+def track_whatsapp_feedback(
+    lead_id: UUID,
+    body: WhatsAppFeedback,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Track WhatsApp message feedback and engagement."""
+    return lead_service.track_whatsapp_feedback(db, lead_id, current_user, body)
