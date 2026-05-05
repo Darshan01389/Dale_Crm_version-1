@@ -22,9 +22,11 @@ export const PersonaProvider = ({ children }) => {
     const role = profile?.role || 'Team Lead';
     const color = PERSONA_COLORS[role] || '#1F4E79';
     const glow  = PERSONA_GLOW[role]  || 'rgba(31,78,121,0.15)';
+    /*
     document.documentElement.style.setProperty('--persona-accent', color);
     document.documentElement.style.setProperty('--primary', color);
     document.documentElement.style.setProperty('--primary-glow', glow);
+    */
   }, [profile?.role]);
 
   return (

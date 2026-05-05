@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUser } from '../contexts/UserContext';
 
 const CARDS = [
@@ -15,17 +15,44 @@ const FAQS = [
   { q: 'Can I reassign multiple leads at once?', a: 'Yes, go to the Leads table, select multiple checkboxes, and click "Reassign" from the bulk actions menu.' },
   { q: 'How is the AI Win Probability calculated?', a: 'Our model analyses historical conversion rates, communication velocity, sentiment from transcripts, and firmographic data.' },
 ];
-
 const HelpSupport = () => {
   const { profile } = useUser();
-  const [search, setSearch]   = useState('');
-  const [status, setStatus]   = useState('operational');
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('operational');
   const isFounder = profile?.is_founding_customer;
+
+  const [showChatbot, setShowChatbot] = useState(false);
+
+  useEffect(() => {
+    const handleMessage = (event) => {
+      if (event.data === 'closeChat') {
+        setShowChatbot(false);
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   const handleCard = (card) => {
     if (card.onboard) { window.location.href = '/welcome'; return; }
+    if (card.name === 'Chat with Support') {
+      setShowChatbot(true);
+      return;
+    }
     if (card.href) window.open(card.href, '_blank');
   };
+
+  if (showChatbot) {
+    return (
+      <div style={{ height: '100%', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+        <iframe 
+          src="http://localhost:8002" 
+          style={{ width: '100%', height: '100%', border: 'none' }}
+          title="DaleIQ Assistant"
+        />
+      </div>
+    );
+  }
 
   return (
     <div style={{ height: '100%', overflowY: 'auto', background: 'var(--bg)' }} className="custom-scroll animate-in">

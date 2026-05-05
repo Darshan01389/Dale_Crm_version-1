@@ -28,7 +28,7 @@ const Section = ({ title, children }) => (
 
 const Settings = () => {
   const { profile, updateProfile, logout } = useUser();
-  const { theme, setTheme, accentColor, setAccentColor } = useTheme();
+  const { theme, setTheme } = useTheme();
   const [tab, setTab] = useState('profile');
   const [form, setForm] = useState({ name: profile.name, email: profile.email, phone: profile.phone, role: profile.role });
   const [notifs, setNotifs] = useState({ highIntent: true, atRisk: true, dailySummary: false, weeklyDigest: true });

@@ -22,8 +22,8 @@
   --lead-accent: #1F4E79;     /* DaleIQ Blue   — Team Lead */
   --owner-accent: #7C4A2D;    /* Warm Brown    — Owner/Admin */
 
-  /* Persona-switched primary — default to lead (Team Lead blue) */
-  --persona-accent: #1F4E79;
+  /* Persona-switched primary — default to Sales Rep (Forest Green) */
+  --persona-accent: #1F6E43;
 
   /* Semantic colors */
   --success: #1F6E43;
@@ -39,7 +39,7 @@
 
   /* Primary uses persona-accent */
   --primary: var(--persona-accent);
-  --primary-glow: rgba(31, 78, 121, 0.15);
+  --primary-glow: rgba(31, 110, 67, 0.15);
 }
 
 .dark {

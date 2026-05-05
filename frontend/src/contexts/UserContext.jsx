@@ -21,29 +21,29 @@ function getInitials(name) {
 
 const UserContext = createContext(undefined);
 
-export const UserProvider = ({ children }) => {
-  const applyTheme = (role) => {
-    const roleColors = {
-      'Sales Rep': 'var(--rep-accent)',
-      'Team Lead': 'var(--lead-accent)',
-      'Owner / Admin': 'var(--owner-accent)'
-    };
-    if (roleColors[role]) {
-      document.documentElement.style.setProperty('--primary', roleColors[role]);
-    }
+const applyTheme = (role) => {
+  const themes = {
+    'Sales Rep': { color: '#1F6E43', glow: 'rgba(31, 110, 67, 0.15)' },
+    'Team Lead': { color: '#1F4E79', glow: 'rgba(31, 78, 121, 0.15)' },
+    'Owner / Admin': { color: '#7C4A2D', glow: 'rgba(124, 74, 45, 0.15)' }
   };
+  const theme = themes[role] || themes['Team Lead'];
+  document.documentElement.style.setProperty('--primary', theme.color);
+  document.documentElement.style.setProperty('--primary-glow', theme.glow);
+};
+
+export const UserProvider = ({ children }) => {
 
   const [profile, setProfile] = useState(() => {
+    let initialProfile = defaultProfile;
     try {
       const saved = localStorage.getItem('voiceiq_profile');
       if (saved) {
-        const parsed = { ...defaultProfile, ...JSON.parse(saved) };
-        applyTheme(parsed.role);
-        return parsed;
+        initialProfile = { ...defaultProfile, ...JSON.parse(saved) };
       }
     } catch {}
-    applyTheme(defaultProfile.role);
-    return defaultProfile;
+    applyTheme(initialProfile.role);
+    return initialProfile;
   });
 
   useEffect(() => {

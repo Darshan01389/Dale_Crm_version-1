@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
+// ACCENT_COLORS are disabled in favor of Persona-based accents in UserContext
+/*
 export const ACCENT_COLORS = {
   purple:  '262 83% 58%',
   blue:    '217 91% 60%',
@@ -7,6 +9,7 @@ export const ACCENT_COLORS = {
   rose:    '346 84% 61%',
   amber:   '38 92% 50%',
 };
+*/
 
 const ThemeContext = createContext(undefined);
 
@@ -16,10 +19,12 @@ export const ThemeProvider = ({ children }) => {
     return savedTheme || 'system';
   });
 
+  /*
   const [accentColor, setAccentColor] = useState(() => {
     const saved = localStorage.getItem('voiceiq-accent');
     return saved || 'purple';
   });
+  */
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -35,6 +40,7 @@ export const ThemeProvider = ({ children }) => {
     localStorage.setItem('voiceiq-theme', theme);
   }, [theme]);
 
+  /*
   // Apply Accent Color
   useEffect(() => {
     const root = window.document.documentElement;
@@ -42,6 +48,7 @@ export const ThemeProvider = ({ children }) => {
     root.style.setProperty('--primary', hsl);
     localStorage.setItem('voiceiq-accent', accentColor);
   }, [accentColor]);
+  */
 
   // Handle system theme changes
   useEffect(() => {
@@ -59,7 +66,7 @@ export const ThemeProvider = ({ children }) => {
   }, [theme]);
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, accentColor, setAccentColor }}>
+    <ThemeContext.Provider value={{ theme, setTheme }}>
       {children}
     </ThemeContext.Provider>
   );
