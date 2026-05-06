@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 from app.core.database import engine
-from app.routes import analytics, auth, company, salesperson, activities, deals, leads, pipeline
+# from app.routes import analytics, auth, company, salesperson, activities, deals, leads, pipeline
 
 
 @asynccontextmanager
@@ -39,25 +39,34 @@ app.add_middleware(
 
 # Ensure tables exist
 from app.core.database import Base, engine
-from app.models import user, team, company, lead, deal, activity, pipeline_stage, voice_recording
+from app.models import (
+    user as m_user, team as m_team, company as m_company, 
+    lead as m_lead, deal as m_deal, activity as m_activity, 
+    pipeline_stage as m_stage, voice_recording as m_voice
+)
 Base.metadata.create_all(bind=engine)
 
 from app.routes.auth import router as auth_router
 from app.routes.leads import router as lead_router
 from app.api.voice import router as voice_router
-
 from app.routes.ai import router as ai_router
+from app.routes.teams import router as team_router
+from app.routes.analytics import router as analytics_router
+from app.routes.company import router as company_router
+from app.routes.salesperson import router as salesperson_router
+from app.routes.activities import router as activity_router
+from app.routes.deals import router as deal_router
+from app.routes.pipeline import router as pipeline_router
 
 app.include_router(auth_router)
 app.include_router(lead_router)
 app.include_router(voice_router)
-app.include_router(company.router)
-app.include_router(salesperson.router)
-app.include_router(deals.router)
-app.include_router(activities.router)
-app.include_router(pipeline.router)
-app.include_router(analytics.router)
-from app.routes.teams import router as team_router
+app.include_router(company_router)
+app.include_router(salesperson_router)
+app.include_router(deal_router)
+app.include_router(activity_router)
+app.include_router(pipeline_router)
+app.include_router(analytics_router)
 app.include_router(team_router)
 app.include_router(ai_router)
 

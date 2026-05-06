@@ -226,7 +226,7 @@ def assign_lead(db: Session, lead_id, user_id, current_user_id):
     lead = db.query(Lead).filter(Lead.id == lead_id).first()
 
     if not lead:
-        raise Exception("Lead not found")
+        raise HTTPException(status_code=404, detail="Lead not found")
 
     lead.assigned_to = user_id
     db.commit()
