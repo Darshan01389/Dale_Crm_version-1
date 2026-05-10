@@ -120,7 +120,7 @@ const HelpSupport = () => {
 
         {/* Founding customer perk card */}
         {isFounder && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 24, background: 'rgba(31, 78, 121, 0.05)', border: '2px solid var(--primary)', borderRadius: 16, marginBottom: 40, flexWrap: 'wrap', gap: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 24, background: 'rgba(79, 70, 229, 0.05)', border: '2px solid var(--primary)', borderRadius: 16, marginBottom: 40, flexWrap: 'wrap', gap: 16 }}>
             <div>
               <div style={{ fontSize: 11, fontWeight: 900, color: 'var(--primary)', letterSpacing: '0.1em', marginBottom: 6 }}>★ FOUNDING CUSTOMER PERK</div>
               <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)', marginBottom: 4 }}>Stuck? Email the founder directly.</div>
@@ -150,7 +150,7 @@ const HelpSupport = () => {
         {/* System status */}
         <div className="status-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>
-            <div style={{ width: 10, height: 10, borderRadius: '50%', background: status === 'operational' ? '#10B981' : '#F59E0B', boxShadow: status === 'operational' ? '0 0 8px rgba(16, 185, 129, 0.4)' : 'none' }} />
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: status === 'operational' ? '#6366F1' : '#F59E0B', boxShadow: status === 'operational' ? '0 0 8px rgba(99, 102, 241, 0.4)' : 'none' }} />
             {status === 'operational' ? 'All systems operational' : 'Degraded performance'}
           </div>
           <a href="https://status.daleiq.com" target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, color: 'var(--primary)', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4 }}>

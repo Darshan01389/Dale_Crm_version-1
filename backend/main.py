@@ -57,8 +57,10 @@ from app.routes.salesperson import router as salesperson_router
 from app.routes.activities import router as activity_router
 from app.routes.deals import router as deal_router
 from app.routes.pipeline import router as pipeline_router
+from app.routes.users import router as user_router
 
 app.include_router(auth_router)
+app.include_router(user_router)
 app.include_router(lead_router)
 app.include_router(voice_router)
 app.include_router(company_router)

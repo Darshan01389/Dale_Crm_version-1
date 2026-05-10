@@ -45,7 +45,7 @@ const TeamReports = () => {
   }));
 
   return (
-    <div style={{ padding: '30px 40px', background: 'var(--bg)', minHeight: '100%' }} className="custom-scroll">
+    <div style={{ padding: '30px 40px', background: 'var(--bg)', height: '100%', overflowY: 'auto' }} className="custom-scroll">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 }}>
         <div>
           <h1 className="text-h1" style={{ marginBottom: 4 }}>Team Intelligence</h1>
@@ -67,7 +67,7 @@ const TeamReports = () => {
         <div className="card glass" style={{ padding: 24 }}>
           <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', letterSpacing: 1, marginBottom: 8 }}>REVENUE WON</div>
           <div style={{ fontSize: 28, fontWeight: 900 }}>₹{(data.revenue_won / 100000).toFixed(1)}L</div>
-          <div style={{ fontSize: 12, color: '#10B981', marginTop: 4, fontWeight: 600 }}>↑ 12% vs last period</div>
+          <div style={{ fontSize: 12, color: '#6366F1', marginTop: 4, fontWeight: 600 }}>↑ 12% vs last period</div>
         </div>
         <div className="card glass" style={{ padding: 24 }}>
           <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', letterSpacing: 1, marginBottom: 8 }}>AVG WIN RATE</div>
@@ -77,7 +77,7 @@ const TeamReports = () => {
         <div className="card glass" style={{ padding: 24 }}>
           <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', letterSpacing: 1, marginBottom: 8 }}>LEAD QUALITY</div>
           <div style={{ fontSize: 28, fontWeight: 900 }}>{data.leads_avg_ai_score?.toFixed(1) || 0}</div>
-          <div style={{ fontSize: 12, color: '#10B981', marginTop: 4, fontWeight: 600 }}>High Intent Average</div>
+          <div style={{ fontSize: 12, color: '#6366F1', marginTop: 4, fontWeight: 600 }}>High Intent Average</div>
         </div>
         <div className="card glass" style={{ padding: 24 }}>
           <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', letterSpacing: 1, marginBottom: 8 }}>TOTAL ACTIVITIES</div>
@@ -99,7 +99,11 @@ const TeamReports = () => {
                   contentStyle={{ borderRadius: 12, border: 'none', boxShadow: '0 8px 24px rgba(0,0,0,0.1)' }}
                   cursor={{ fill: 'rgba(0,0,0,0.02)' }}
                 />
-                <Bar dataKey="value" fill="var(--primary)" radius={[6, 6, 0, 0]} barSize={40} />
+                <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={40}>
+                  {funnelData.map((entry, idx) => (
+                    <Cell key={`cell-${idx}`} fill={['#6366F1', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#EF4444'][idx % 6]} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -130,7 +134,7 @@ const TeamReports = () => {
           <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginTop: 20 }}>
             {sentimentData.map(s => (
               <div key={s.name} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: s.color }} />
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: s.color, boxShadow: `0 0 8px ${s.color}66` }} />
                 <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)' }}>{s.name}</span>
               </div>
             ))}

@@ -50,7 +50,7 @@ const FoundingWelcome = ({ onContinue }) => {
     }}>
       <div style={{
         background: 'var(--bg-surface)', borderRadius: 20,
-        border: '3px solid #1F4E79',
+        border: '3px solid #4F46E5',
         maxWidth: 480, width: '100%', padding: 40,
         boxShadow: '0 24px 64px rgba(0,0,0,0.25)',
         display: 'flex', flexDirection: 'column', gap: 0,
@@ -59,7 +59,7 @@ const FoundingWelcome = ({ onContinue }) => {
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <span style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
-            background: '#1F4E79', color: 'white',
+            background: '#4F46E5', color: 'white',
             fontSize: 12, fontWeight: 800, letterSpacing: '0.08em',
             padding: '6px 18px', borderRadius: 20,
           }}>
@@ -83,7 +83,7 @@ const FoundingWelcome = ({ onContinue }) => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 32 }}>
           {PERKS.map((perk, i) => (
             <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-              <span style={{ fontSize: 16, color: '#1F4E79', flexShrink: 0, marginTop: 1 }}>★</span>
+              <span style={{ fontSize: 16, color: '#4F46E5', flexShrink: 0, marginTop: 1 }}>★</span>
               <div>
                 <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)', marginBottom: 2 }}>{perk.name}</div>
                 <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>{perk.desc}</div>

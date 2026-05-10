@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { useUser } from '../contexts/UserContext';
 import AddContactModal from '../components/AddContactModal';
 
 const MOCK_LEADS = [
@@ -21,11 +23,12 @@ const intentBadge = {
 
 const stageColors = {
   'New': '#D1D5DB', 'Contacted': '#93C5FD', 'Proposal': '#60A5FA',
-  'Negotiation': '#2563EB', 'Closed-Won': '#1F6E43', 'Closed-Lost': '#9CA3AF',
+  'Negotiation': '#2563EB', 'Closed-Won': '#4F46E5', 'Closed-Lost': '#9CA3AF',
 };
 
 const Leads = () => {
   const navigate = useNavigate();
+  const { profile } = useUser();
   const [leads, setLeads] = useState([]);
   const [search, setSearch] = useState('');
   const [stageFilter, setStageFilter] = useState('All');
@@ -33,12 +36,61 @@ const Leads = () => {
   const [selected, setSelected] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
+  // Map API lead fields → UI fields
+  const normalizeLeads = (raw) => raw.map(l => {
+    // status → stage label
+    const statusMap = {
+      new: 'New', contacted: 'Contacted', proposal: 'Proposal',
+      negotiation: 'Negotiation', won: 'Closed-Won', lost: 'Closed-Lost',
+      qualified: 'Proposal', cold: 'Contacted'
+    };
+    // ai_score → intent
+    let intent = 'standard';
+    if (l.ai_score != null) {
+      if (l.ai_score >= 70) intent = 'high';
+      else if (l.ai_score <= 35) intent = 'risk';
+    } else if (l.sentiment_label === 'positive') intent = 'high';
+    else if (l.sentiment_label === 'negative') intent = 'risk';
+
+    // last_contacted_at → relative time string
+    let lastContact = 'Never';
+    if (l.last_contacted_at) {
+      const diff = Date.now() - new Date(l.last_contacted_at).getTime();
+      const hrs = Math.floor(diff / 3600000);
+      if (hrs < 24) lastContact = `${hrs}h ago`;
+      else lastContact = `${Math.floor(hrs / 24)}d ago`;
+    }
+
+    // deal_value → formatted ₹ string
+    const val = l.deal_value ?? 0;
+    const valStr = val >= 100000
+      ? `₹${(val / 100000).toFixed(1)}L`
+      : `₹${(val / 1000).toFixed(0)}K`;
+
+    return {
+      id: l.id,
+      name: l.title || l.name || 'Unknown',
+      company: l.company || '—',
+      phone: l.phone || '—',
+      stage: statusMap[l.status] || l.status || 'New',
+      intent,
+      value: valStr,
+      source: l.source || '—',
+      lastContact,
+      email: l.email,
+    };
+  });
+
   useEffect(() => {
     const loadLeads = async () => {
       try {
         const token = localStorage.getItem('voiceiq_token');
         const res = await fetch('/api/leads', { headers: { Authorization: `Bearer ${token}` } });
-        if (res.ok) { const d = await res.json(); setLeads(d.length ? d : MOCK_LEADS); return; }
+        if (res.ok) {
+          const d = await res.json();
+          setLeads(d.length ? normalizeLeads(d) : MOCK_LEADS);
+          return;
+        }
       } catch {}
       setLeads(MOCK_LEADS);
     };
@@ -107,8 +159,30 @@ const Leads = () => {
           ))}
         </div>
 
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 24 }}>
-          <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>{filtered.length} leads found</span>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600, marginRight: 12 }}>{filtered.length} leads found</span>
+          
+          {(profile?.role === 'Owner / Admin' || profile?.role === 'Team Lead') && (
+            <button 
+              onClick={async () => {
+                try {
+                  const token = localStorage.getItem('voiceiq_token');
+                  const leadIds = filtered.map(l => l.id);
+                  await axios.post('/api/leads/distribute-ai', { lead_ids: leadIds }, {
+                    headers: { Authorization: `Bearer ${token}` }
+                  });
+                  alert('Leads distributed via AI matching!');
+                } catch (err) {
+                  alert('Error distributing leads. Ensure you have teams and reps assigned.');
+                }
+              }} 
+              className="btn-secondary" 
+              style={{ height: 44, padding: '0 20px', border: '1px solid var(--primary)', color: 'var(--primary)' }}
+            >
+              🪄 AI Distribute
+            </button>
+          )}
+
           <button onClick={() => { setSelected(null); setShowModal(true); }} className="btn-primary" style={{ height: 44, padding: '0 24px' }}>
             <span style={{ marginRight: 8 }}>+</span> Add Lead
           </button>
@@ -165,7 +239,7 @@ const Leads = () => {
                 <td style={{ padding: '20px 24px', borderTop: '1px solid var(--border-subtle)', borderBottom: '1px solid var(--border-subtle)' }}>
                   <span style={{ 
                     padding: '6px 12px', borderRadius: 8, 
-                    background: lead.intent === 'high' ? 'rgba(16, 185, 129, 0.1)' : lead.intent === 'risk' ? 'rgba(217, 119, 6, 0.1)' : 'var(--bg-subtle)',
+                    background: lead.intent === 'high' ? 'rgba(99, 102, 241, 0.1)' : lead.intent === 'risk' ? 'rgba(217, 119, 6, 0.1)' : 'var(--bg-subtle)',
                     color: lead.intent === 'high' ? 'var(--success)' : lead.intent === 'risk' ? 'var(--owner-accent)' : 'var(--text-muted)',
                     fontSize: 11, fontWeight: 800, letterSpacing: '0.02em'
                   }}>

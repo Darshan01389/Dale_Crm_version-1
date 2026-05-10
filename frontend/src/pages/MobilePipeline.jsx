@@ -16,7 +16,7 @@ const DEALS = [
   { id: '8', name: 'Deepa Nair',     stage: 'Closed-Won',   value: '₹6.3L', intent: 'hot',  contactId: '5' },
 ];
 
-const INTENT_DOT = { hot: '#1F6E43', risk: '#B4670F', std: '#777777' };
+const INTENT_DOT = { hot: '#4F46E5', risk: '#B4670F', std: '#777777' };
 
 const MobilePipeline = () => {
   const navigate = useNavigate();
@@ -107,7 +107,7 @@ const MobilePipeline = () => {
           <div key={deal.id}
             onClick={() => navigate(`/leads/${deal.contactId}`)}
             style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: 'var(--bg-surface)', borderRadius: 10, cursor: 'pointer', minHeight: 44, border: '1px solid var(--border-subtle)', opacity: 0.6, marginBottom: 4 }}>
-            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#1F6E43', flexShrink: 0 }} />
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#4F46E5', flexShrink: 0 }} />
             <span style={{ flex: 1, fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>{deal.name}</span>
             <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>{deal.value}</span>
           </div>

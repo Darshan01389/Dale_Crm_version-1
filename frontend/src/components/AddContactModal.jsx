@@ -61,10 +61,10 @@ const AddContactModal = ({ isOpen, onClose }) => {
             }}>
               <span style={{ fontSize: 16 }}>{isDuplicate ? '🚨' : '✨'}</span>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: isDuplicate ? '#991B1B' : '#1F4E79' }}>
+                <div style={{ fontSize: 13, fontWeight: 800, color: isDuplicate ? '#991B1B' : '#4F46E5' }}>
                   {isDuplicate ? 'Duplicate Detected' : 'AI Detection'}
                 </div>
-                <div style={{ fontSize: 12, color: isDuplicate ? '#991B1B' : '#1F4E79', marginTop: 2 }}>
+                <div style={{ fontSize: 12, color: isDuplicate ? '#991B1B' : '#4F46E5', marginTop: 2 }}>
                   {isDuplicate 
                     ? 'A contact with this phone number already exists in your database.' 
                     : 'WhatsApp available. No existing records found. Location: Mumbai, India.'}

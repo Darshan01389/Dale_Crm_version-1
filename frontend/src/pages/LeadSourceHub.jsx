@@ -37,7 +37,7 @@ const LeadSourceHub = () => {
 
             {source.status === 'connected' ? (
               <div style={{ marginTop: 20, padding: '12px 16px', background: '#F0F9FF', borderRadius: 12, border: '1px solid #BAE6FD' }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: '#0369A1' }}>LIVE PERFORMANCE</div>
+                <div style={{ fontSize: 11, fontWeight: 800, color: '#4F46E5' }}>LIVE PERFORMANCE</div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#0C4A6E', marginTop: 4 }}>{source.stats}</div>
               </div>
             ) : (

@@ -28,7 +28,7 @@ export const ToastProvider = ({ children }) => {
 };
 
 const TOAST_CONFIG = {
-  success: { bg: '#EAF3DE', border: '#1F6E43', color: '#1F6E43', icon: '✓' },
+  success: { bg: '#EAF3DE', border: '#4F46E5', color: '#4F46E5', icon: '✓' },
   info:    { bg: '#E6F1FB', border: '#185FA5', color: '#185FA5', icon: 'ℹ' },
   warning: { bg: '#FFF3DB', border: '#B4670F', color: '#B4670F', icon: '⚠' },
   error:   { bg: '#FDE8E8', border: '#9B2C2C', color: '#9B2C2C', icon: '✕' },

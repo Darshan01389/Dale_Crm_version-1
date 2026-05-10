@@ -23,9 +23,9 @@ const UserContext = createContext(undefined);
 
 const applyTheme = (role) => {
   const themes = {
-    'Sales Rep': { color: '#1F6E43', glow: 'rgba(31, 110, 67, 0.15)' },
-    'Team Lead': { color: '#1F4E79', glow: 'rgba(31, 78, 121, 0.15)' },
-    'Owner / Admin': { color: '#7C4A2D', glow: 'rgba(124, 74, 45, 0.15)' }
+    'Sales Rep': { color: '#4F46E5', glow: 'rgba(79, 70, 229, 0.15)' },
+    'Team Lead': { color: '#4F46E5', glow: 'rgba(79, 70, 229, 0.15)' },
+    'Owner / Admin': { color: '#4F46E5', glow: 'rgba(79, 70, 229, 0.15)' }
   };
   const theme = themes[role] || themes['Team Lead'];
   document.documentElement.style.setProperty('--primary', theme.color);

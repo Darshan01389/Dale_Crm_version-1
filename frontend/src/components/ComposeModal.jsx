@@ -66,7 +66,7 @@ const ComposeModal = ({ isOpen, onClose }) => {
                   <button 
                     key={i}
                     onClick={() => { setMsg(s); setShowAI(false); }}
-                    style={{ padding: '6px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, background: '#F0F9FF', color: '#0369A1', border: '1px solid #BAE6FD', cursor: 'pointer' }}
+                    style={{ padding: '6px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, background: '#F0F9FF', color: '#4F46E5', border: '1px solid #BAE6FD', cursor: 'pointer' }}
                   >
                     {s}
                   </button>

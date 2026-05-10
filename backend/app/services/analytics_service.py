@@ -25,11 +25,15 @@ def build_db_dashboard(db: Session, user: User, days: int = 30) -> AnalyticsDash
     since_date = datetime.utcnow() - timedelta(days=days)
     
     # Filter based on role
-    if user.role == "Sales Rep":
+    is_sales = user.role in ["Sales Rep", "Sales"]
+    is_manager = user.role in ["Team Lead", "Manager"]
+    is_admin = user.role in ["Owner / Admin", "Sales Admin"]
+
+    if is_sales:
         base_filter_lead = (Lead.owner_id == user.id) & (Lead.created_at >= since_date)
         base_filter_deal = (Deal.owner_id == user.id) & (Deal.created_at >= since_date)
         base_filter_act = (Activity.owner_id == user.id) & (Activity.occurred_at >= since_date)
-    elif user.role == "Team Lead":
+    elif is_manager:
         if user.team_id:
             member_ids = db.query(User.id).filter(User.team_id == user.team_id).all()
             member_ids = [m[0] for m in member_ids]
@@ -40,7 +44,7 @@ def build_db_dashboard(db: Session, user: User, days: int = 30) -> AnalyticsDash
             base_filter_lead = (Lead.owner_id == user.id) & (Lead.created_at >= since_date)
             base_filter_deal = (Deal.owner_id == user.id) & (Deal.created_at >= since_date)
             base_filter_act = (Activity.owner_id == user.id) & (Activity.occurred_at >= since_date)
-    else: # Owner / Admin
+    else: # Owner / Admin or unknown defaults to Admin for analytics
         base_filter_lead = (Lead.created_at >= since_date)
         base_filter_deal = (Deal.created_at >= since_date)
         base_filter_act = (Activity.occurred_at >= since_date)

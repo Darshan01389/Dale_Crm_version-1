@@ -35,10 +35,10 @@ const CallCoach = () => {
               </div>
               <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>Rep: {call.rep} · {call.date}</div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <span style={{ padding: '4px 8px', borderRadius: 6, background: 'rgba(31, 78, 121, 0.1)', color: 'var(--primary)', fontSize: 10, fontWeight: 800, letterSpacing: '0.05em' }}>{call.signal.toUpperCase()}</span>
+                <span style={{ padding: '4px 8px', borderRadius: 6, background: 'rgba(79, 70, 229, 0.1)', color: 'var(--primary)', fontSize: 10, fontWeight: 800, letterSpacing: '0.05em' }}>{call.signal.toUpperCase()}</span>
                 <span style={{ 
                   padding: '4px 8px', borderRadius: 6, 
-                  background: call.score >= 80 ? 'rgba(16, 185, 129, 0.1)' : call.score >= 60 ? 'rgba(217, 119, 6, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                  background: call.score >= 80 ? 'rgba(99, 102, 241, 0.1)' : call.score >= 60 ? 'rgba(217, 119, 6, 0.1)' : 'rgba(239, 68, 68, 0.1)',
                   color: call.score >= 80 ? 'var(--success)' : call.score >= 60 ? 'var(--owner-accent)' : 'var(--danger)',
                   fontSize: 10, fontWeight: 800, letterSpacing: '0.05em' 
                 }}>SCORE: {call.score}</span>
@@ -63,7 +63,7 @@ const CallCoach = () => {
               {/* Signal Summary Bar */}
               <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                 <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.08em' }}>SIGNALS DETECTED</span>
-                <span style={{ padding: '4px 10px', borderRadius: 20, background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', fontSize: 11, fontWeight: 800, letterSpacing: '0.05em', border: '1px solid var(--success)' }}>BUDGET APPROVED</span>
+                <span style={{ padding: '4px 10px', borderRadius: 20, background: 'rgba(99, 102, 241, 0.1)', color: 'var(--success)', fontSize: 11, fontWeight: 800, letterSpacing: '0.05em', border: '1px solid var(--success)' }}>BUDGET APPROVED</span>
                 <span style={{ padding: '4px 10px', borderRadius: 20, background: 'rgba(217, 119, 6, 0.1)', color: 'var(--owner-accent)', fontSize: 11, fontWeight: 800, letterSpacing: '0.05em', border: '1px solid var(--owner-accent)' }}>COMPETITOR MENTIONED</span>
                 <span style={{ padding: '4px 10px', borderRadius: 20, background: 'rgba(217, 119, 6, 0.1)', color: 'var(--owner-accent)', fontSize: 11, fontWeight: 800, letterSpacing: '0.05em', border: '1px solid var(--owner-accent)' }}>PRICING OBJECTION</span>
               </div>

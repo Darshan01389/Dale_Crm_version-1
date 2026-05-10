@@ -60,7 +60,7 @@ const AboutCommunity = () => {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>New Posts (Today)</span>
-                  <span style={{ fontWeight: 800, color: '#10B981' }}>+48</span>
+                  <span style={{ fontWeight: 800, color: '#6366F1' }}>+48</span>
                 </div>
               </div>
             </div>

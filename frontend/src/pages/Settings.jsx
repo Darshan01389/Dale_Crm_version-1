@@ -122,7 +122,7 @@ const Settings = () => {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <button onClick={save} className="btn-primary" style={{ padding: '10px 24px' }}>Save Changes</button>
-                {saved && <span style={{ fontSize: 13, color: '#1F6E43', fontWeight: 600 }}>✓ Saved</span>}
+                {saved && <span style={{ fontSize: 13, color: '#4F46E5', fontWeight: 600 }}>✓ Saved</span>}
               </div>
               <div style={{ marginTop: 40, paddingTop: 20, borderTop: '1px solid var(--border-subtle)' }}>
                 <button 

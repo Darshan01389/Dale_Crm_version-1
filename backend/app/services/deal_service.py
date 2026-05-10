@@ -41,10 +41,14 @@ def _ensure_deal_owner(deal: Deal | None, user: User) -> Deal:
     if deal is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Deal not found")
     
-    if user.role == "Owner / Admin":
+    # Check for synonyms and standard roles
+    is_admin = user.role in ["Owner / Admin", "Sales Admin"]
+    is_manager = user.role in ["Team Lead", "Manager"]
+
+    if is_admin:
         return deal
         
-    if user.role == "Team Lead":
+    if is_manager:
         lead_owner = deal.owner
         if lead_owner and lead_owner.team_id == user.team_id:
             return deal
@@ -118,16 +122,18 @@ def list_deals(
 ) -> list[DealResponse]:
     q = db.query(Deal).options(joinedload(Deal.stage))
     
-    if user.role == "Sales Rep":
+    if user.role == "Sales Rep" or user.role == "Sales":
         q = q.filter(Deal.owner_id == user.id)
-    elif user.role == "Team Lead":
+    elif user.role in ["Team Lead", "Manager"]:
         if user.team_id:
             member_ids = db.query(User.id).filter(User.team_id == user.team_id).all()
             member_ids = [m[0] for m in member_ids]
             q = q.filter(Deal.owner_id.in_(member_ids))
         else:
+            # If a manager has no team, they should probably see their own or all?
+            # Existing behavior is seeing own. Let's keep that but allow for "Manager" role too.
             q = q.filter(Deal.owner_id == user.id)
-    # Owner / Admin sees all
+    # Owner / Admin and Sales Admin see all
 
     if outcome:
         q = q.filter(Deal.outcome == outcome)

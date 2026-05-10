@@ -13,7 +13,7 @@ const CHANNELS = [
 ];
 
 const PILL = {
-  ACTIVE:   { bg: '#EAF3DE', color: '#1F6E43', border: '#1F6E43' },
+  ACTIVE:   { bg: '#EAF3DE', color: '#4F46E5', border: '#4F46E5' },
   PARTIAL:  { bg: '#FBE9D2', color: '#B4670F', border: '#B4670F' },
   INACTIVE: { bg: '#F1EFE8', color: '#777',    border: '#777'    },
 };

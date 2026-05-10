@@ -2,7 +2,7 @@ import React from 'react';
 
 const BADGE_STYLES = {
   HIGH_INTENT: {
-    background: '#1F6E43',
+    background: '#4F46E5',
     color: '#FFFFFF',
     border: 'none',
   },

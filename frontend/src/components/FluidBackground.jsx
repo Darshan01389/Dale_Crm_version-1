@@ -34,7 +34,7 @@ const FluidBackground = () => {
         this.baseX = this.x;
         this.baseY = this.y;
         this.density = Math.random() * 30 + 1;
-        this.color = 'rgba(31, 110, 67, 0.2)'; // Forest Green base
+        this.color = 'rgba(79, 70, 229, 0.2)'; // Forest Green base
       }
 
       draw() {
@@ -99,7 +99,7 @@ const FluidBackground = () => {
 
           if (distance < 100) {
             opacityValue = 1 - distance / 100;
-            ctx.strokeStyle = `rgba(31, 110, 67, ${opacityValue * 0.15})`;
+            ctx.strokeStyle = `rgba(79, 70, 229, ${opacityValue * 0.15})`;
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(particles[a].x, particles[a].y);

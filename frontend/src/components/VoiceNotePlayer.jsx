@@ -10,8 +10,8 @@ const SignalPill = ({ label, type }) => (
     fontSize: 10, fontWeight: 700, letterSpacing: '0.06em',
     padding: '3px 8px', borderRadius: 4, marginRight: 6, marginTop: 4,
     background: type === 'positive' ? '#EAF3DE' : '#FBE9D2',
-    color:      type === 'positive' ? '#1F6E43' : '#B4670F',
-    border: `1px solid ${type === 'positive' ? '#1F6E43' : '#B4670F'}`,
+    color:      type === 'positive' ? '#4F46E5' : '#B4670F',
+    border: `1px solid ${type === 'positive' ? '#4F46E5' : '#B4670F'}`,
   }}>
     {label.toUpperCase()}
   </span>
@@ -83,7 +83,7 @@ const VoiceNotePlayer = ({
               position: 'absolute', top: 0, bottom: 0,
               left: `${sig.timestamp * 100}%`,
               width: 2, borderRadius: 2,
-              background: sig.type === 'positive' ? '#1F6E43' : '#B4670F',
+              background: sig.type === 'positive' ? '#4F46E5' : '#B4670F',
               opacity: 0.7,
             }} title={sig.label} />
           ))}

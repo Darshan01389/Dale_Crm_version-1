@@ -1,11 +1,12 @@
 from sqlalchemy import create_engine, text
-import hashlib
 import uuid
+from passlib.context import CryptContext
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 def get_password_hash(password):
-    return hashlib.sha256(password.encode()).hexdigest()
+    return pwd_context.hash(password)
 
-db_url = "postgresql://postgres:Darshan_123@localhost:5432/voiceiq"
+db_url = "postgresql://postgres:Jayanth_123@localhost:5432/voiceiq"
 engine = create_engine(db_url)
 
 users = [

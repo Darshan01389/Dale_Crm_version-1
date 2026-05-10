@@ -216,7 +216,7 @@ const AIAssistant = () => {
                   <div>
                     <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>DaleIQ AI</h3>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981' }} />
+                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#6366F1' }} />
                       <span style={{ fontSize: 11, opacity: 0.9, fontWeight: 500 }}>Always Active</span>
                     </div>
                   </div>
@@ -325,7 +325,7 @@ const AIAssistant = () => {
           borderRadius: 20,
           background: 'white',
           border: '2px solid var(--primary)',
-          boxShadow: '0 8px 24px rgba(31, 78, 121, 0.3)',
+          boxShadow: '0 8px 24px rgba(79, 70, 229, 0.3)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',

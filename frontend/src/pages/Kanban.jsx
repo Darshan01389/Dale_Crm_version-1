@@ -8,12 +8,12 @@ const STAGES = [
   { name: 'Discovery', key: 'discovery', color: '#93C5FD', bg: '#EFF6FF' },
   { name: 'Proposal', key: 'proposal', color: '#60A5FA', bg: '#DBEAFE' },
   { name: 'Negotiation', key: 'negotiation', color: '#2563EB', bg: '#BFDBFE' },
-  { name: 'Closed Won', key: 'won', color: '#10B981', bg: '#D1FAE5' },
+  { name: 'Closed Won', key: 'won', color: '#6366F1', bg: '#D1FAE5' },
   { name: 'Closed Lost', key: 'lost', color: '#EF4444', bg: '#FEE2E2' },
 ];
 
 const intentDot = {
-  high: { color: '#10B981', label: 'Hot' },
+  high: { color: '#6366F1', label: 'Hot' },
   risk: { color: '#F59E0B', label: 'Risk' },
   standard: { color: '#6B7280', label: 'Std' },
   unknown: { color: '#9CA3AF', label: '?' },

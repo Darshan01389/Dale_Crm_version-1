@@ -80,7 +80,7 @@ const Calendar = () => {
           <div>
             <h2 className="text-h2" style={{ margin: 0 }}>Schedule</h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981' }} />
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#6366F1' }} />
               <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)' }}>Google Calendar Connected</span>
             </div>
           </div>
@@ -159,7 +159,7 @@ const Calendar = () => {
                         style={{
                           height: '100%', borderRadius: 10, padding: '10px 14px',
                           background: event.status === 'confirmed'
-                            ? 'rgba(31, 78, 121, 0.08)'
+                            ? 'rgba(79, 70, 229, 0.08)'
                             : 'rgba(217, 119, 6, 0.08)',
                           border: `1.5px solid ${event.status === 'confirmed' ? 'var(--primary)' : 'var(--owner-accent)'}`,
                           cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s',
@@ -199,7 +199,7 @@ const Calendar = () => {
         {/* Legend */}
         <div style={{ display: 'flex', gap: 32, marginTop: 32 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 14, height: 14, borderRadius: 4, background: 'rgba(31, 78, 121, 0.08)', border: '1.5px solid var(--primary)' }} />
+            <div style={{ width: 14, height: 14, borderRadius: 4, background: 'rgba(79, 70, 229, 0.08)', border: '1.5px solid var(--primary)' }} />
             <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)' }}>Confirmed Meeting</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

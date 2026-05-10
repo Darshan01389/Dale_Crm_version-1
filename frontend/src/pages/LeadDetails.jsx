@@ -212,12 +212,12 @@ const LeadDetails = () => {
         <div className="desktop-only" style={{ width: 360, background: 'var(--bg-surface)', borderLeft: '1px solid var(--border)', flexDirection: 'column', display: 'flex', flexShrink: 0 }}>
           <div style={{ padding: '32px 28px', borderBottom: '1px solid var(--border-subtle)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-              <div style={{ padding: 6, background: 'rgba(31, 78, 121, 0.1)', borderRadius: 8 }}>
+              <div style={{ padding: 6, background: 'rgba(79, 70, 229, 0.1)', borderRadius: 8 }}>
                 <svg width="18" height="18" fill="var(--primary)" viewBox="0 0 24 24"><path d="M12 2L3 7v10l9 5 9-5V7L12 2z"/></svg>
               </div>
               <h3 style={{ fontSize: 12, fontWeight: 900, color: 'var(--primary)', letterSpacing: '0.1em', margin: 0 }}>AI COPILOT INSIGHTS</h3>
             </div>
-            <p style={{ fontSize: 15, color: 'var(--text)', lineHeight: 1.7, fontStyle: 'italic', fontWeight: 500, background: 'rgba(31, 78, 121, 0.03)', padding: '16px', borderRadius: 16 }}>
+            <p style={{ fontSize: 15, color: 'var(--text)', lineHeight: 1.7, fontStyle: 'italic', fontWeight: 500, background: 'rgba(79, 70, 229, 0.03)', padding: '16px', borderRadius: 16 }}>
               "Lead is evaluating enterprise migration. Focus on <span style={{ fontWeight: 800, color: 'var(--primary)' }}>API reliability</span> and <span style={{ fontWeight: 800, color: 'var(--primary)' }}>SSO security</span> standards. Ready for pricing negotiation."
             </p>
           </div>
@@ -229,7 +229,7 @@ const LeadDetails = () => {
               <div style={{ fontSize: 36, fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.03em' }}>₹12.0L</div>
               <div style={{ 
                 fontSize: 12, fontWeight: 800, color: 'var(--success)', 
-                background: 'rgba(16, 185, 129, 0.1)', padding: '6px 14px', borderRadius: 10, 
+                background: 'rgba(99, 102, 241, 0.1)', padding: '6px 14px', borderRadius: 10, 
                 display: 'inline-block', marginTop: 16, letterSpacing: '0.02em' 
               }}>92% WIN PROBABILITY</div>
             </div>

@@ -96,7 +96,9 @@ const PipelineRoute = () => {
   return isMobile ? <MobilePipeline /> : <Kanban />;
 };
 
-const App = () => (
+const App = () => {
+
+  return (
   <ToastProvider>
     <PersonaProvider>
       <OfflineBanner />
@@ -113,11 +115,11 @@ const App = () => (
             <PrivateRoute element={
               <AppShell>
                 <RoleRoute
-                  roles={['Owner / Admin']}
+                  roles={['Owner / Admin', 'Sales Admin']}
                   element={<Dashboard />}
                   fallback={
                     <RoleRoute
-                      roles={['Team Lead']}
+                      roles={['Team Lead', 'Manager']}
                       element={<Dashboard />}
                       fallback={<RepPulse />}
                     />
@@ -129,24 +131,24 @@ const App = () => (
         />
 
         {/* Core screens */}
-        {protected_route('/pulse',       RepPulse,        ['Sales Rep', 'Team Lead'])}
-        {protected_route('/inbox',       GlobalInbox,     ['Sales Rep', 'Team Lead', 'Owner / Admin'])}
-        {protected_route('/leads',       Leads,           ['Sales Rep', 'Team Lead', 'Owner / Admin'])}
-        {protected_route('/today',       Today,           ['Sales Rep', 'Team Lead'])}
-        {protected_route('/coach',       CallCoach,       ['Team Lead', 'Owner / Admin'])}
-        {protected_route('/forecast',    Forecast,        ['Team Lead', 'Owner / Admin'])}
-        {protected_route('/settings',    Settings,        ['Sales Rep', 'Team Lead', 'Owner / Admin'])}
+        {protected_route('/pulse',       RepPulse,        ['Sales Rep', 'Sales', 'Team Lead', 'Manager'])}
+        {protected_route('/inbox',       GlobalInbox,     ['Sales Rep', 'Sales', 'Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
+        {protected_route('/leads',       Leads,           ['Sales Rep', 'Sales', 'Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
+        {protected_route('/today',       Today,           ['Sales Rep', 'Sales', 'Team Lead', 'Manager'])}
+        {protected_route('/coach',       CallCoach,       ['Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
+        {protected_route('/forecast',    Forecast,        ['Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
+        {protected_route('/settings',    Settings,        ['Sales Rep', 'Sales', 'Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
         <Route path="/welcome" element={<PrivateRoute element={<WelcomeWizard />} />} />
-        {protected_route('/calendar',    Calendar,        ['Sales Rep', 'Team Lead'])}
-        {protected_route('/leads/:id',   LeadDetails,     ['Sales Rep', 'Team Lead', 'Owner / Admin'])}
-        {protected_route('/sources',     LeadSourceHub,   ['Owner / Admin'])}
-        {protected_route('/team-mgmt',   TeamManagement,  ['Owner / Admin'])}
-        {protected_route('/org-settings',OrgSettings,     ['Owner / Admin'])}
-        {protected_route('/team-reports',TeamReports,     ['Team Lead', 'Owner / Admin'])}
-        {protected_route('/help',        HelpSupport,     ['Sales Rep', 'Team Lead', 'Owner / Admin'])}
-        {protected_route('/billing',     Billing,         ['Owner / Admin'])}
-        {protected_route('/settings/channels', ChannelSettings, ['Owner / Admin'])}
-        {protected_route('/community',   AboutCommunity,  ['Sales Rep', 'Team Lead', 'Owner / Admin'])}
+        {protected_route('/calendar',    Calendar,        ['Sales Rep', 'Sales', 'Team Lead', 'Manager'])}
+        {protected_route('/leads/:id',   LeadDetails,     ['Sales Rep', 'Sales', 'Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
+        {protected_route('/sources',     LeadSourceHub,   ['Owner / Admin', 'Sales Admin'])}
+        {protected_route('/team-mgmt',   TeamManagement,  ['Owner / Admin', 'Sales Admin'])}
+        {protected_route('/org-settings',OrgSettings,     ['Owner / Admin', 'Sales Admin'])}
+        {protected_route('/team-reports',TeamReports,     ['Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
+        {protected_route('/help',        HelpSupport,     ['Sales Rep', 'Sales', 'Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
+        {protected_route('/billing',     Billing,         ['Owner / Admin', 'Sales Admin'])}
+        {protected_route('/settings/channels', ChannelSettings, ['Owner / Admin', 'Sales Admin'])}
+        {protected_route('/community',   AboutCommunity,  ['Sales Rep', 'Sales', 'Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
 
         {/* Pipeline — responsive (Kanban desktop / MobilePipeline mobile) */}
         <Route
@@ -154,7 +156,7 @@ const App = () => (
           element={
             <PrivateRoute element={
               <RoleRoute
-                roles={['Sales Rep', 'Team Lead', 'Owner / Admin']}
+                roles={['Sales Rep', 'Sales', 'Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin']}
                 element={<AppShell><PipelineRoute /></AppShell>}
                 fallback="/"
               />
@@ -167,6 +169,7 @@ const App = () => (
       </Routes>
     </PersonaProvider>
   </ToastProvider>
-);
+  );
+};
 
 export default App;

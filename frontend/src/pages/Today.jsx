@@ -78,7 +78,7 @@ const Today = () => {
 
         {callFirst.length > 0 && (
           <div style={{ marginBottom: 40 }}>
-            <SectionLabel text={`Call First · ${callFirst.length}`} count={callFirst.length} color="#1F6E43" />
+            <SectionLabel text={`Call First · ${callFirst.length}`} count={callFirst.length} color="#4F46E5" />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {callFirst.map(item => (
                 <div key={item.id} onClick={() => navigate(`/leads/${item.id}`)}
@@ -116,7 +116,7 @@ const Today = () => {
 
         {scheduled.length > 0 && (
           <div style={{ marginBottom: 40 }}>
-            <SectionLabel text={`Scheduled · ${scheduled.length}`} count={scheduled.length} color="#1F4E79" />
+            <SectionLabel text={`Scheduled · ${scheduled.length}`} count={scheduled.length} color="#4F46E5" />
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {scheduled.map(item => (
                 <div key={item.id} onClick={() => navigate(`/leads/${item.id}`)}

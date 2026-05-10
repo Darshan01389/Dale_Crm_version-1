@@ -52,7 +52,7 @@ def get_admin_user(
     Only allows admin users through
     Use this on admin-only routes
     """
-    if current_user.role != "Owner / Admin":
+    if current_user.role not in ["Owner / Admin", "Sales Admin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required"

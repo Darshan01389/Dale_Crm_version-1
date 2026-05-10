@@ -1,28 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import SetupChecklist from '../components/SetupChecklist';
 import { useUser } from '../contexts/UserContext';
 
 const PERIODS = [
-  { id: '7d', label: '7 Days' },
-  { id: '30d', label: '30 Days' },
-  { id: '90d', label: '3 Months' },
-  { id: '180d', label: '6 Months' },
+  { id: '7 Days', label: '7 Days' },
+  { id: '30 Days', label: '30 Days' },
+  { id: '3 Months', label: '3 Months' },
+  { id: '12 Months', label: '12 Months' },
 ];
 
 const RepPulse = () => {
   const { profile } = useUser();
-  const [period, setPeriod] = useState('30d');
+  const [period, setPeriod] = useState('30 Days');
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [showChecklist, setShowChecklist] = useState(profile?.role !== 'Sales Rep');
 
-  // Mock stats based on period
-  const statsData = {
-    '7d': { outreach: 142, meetings: 12, won: '₹1.2L', quota: 40, trend: [30, 45, 25, 60, 40, 55, 42], goals: [{ label: 'Qualify 5 Leads', progress: 3, total: 5 }, { label: '2 Discovery Calls', progress: 1, total: 2 }, { label: '₹1L Revenue', progress: 0.8, total: 1 }] },
-    '30d': { outreach: 584, meetings: 45, won: '₹8.4L', quota: 84, trend: [60, 80, 45, 90, 70, 100, 85], goals: [{ label: 'Qualify 20 Leads', progress: 14, total: 20 }, { label: '10 Discovery Calls', progress: 8, total: 10 }, { label: '₹10L Revenue', progress: 8.4, total: 10 }] },
-    '90d': { outreach: 1840, meetings: 128, won: '₹22.5L', quota: 75, trend: [80, 70, 100, 85, 110, 95, 120], goals: [{ label: 'Qualify 60 Leads', progress: 45, total: 60 }, { label: '30 Discovery Calls', progress: 22, total: 30 }, { label: '₹30L Revenue', progress: 22.5, total: 30 }] },
-    '180d': { outreach: 3200, meetings: 210, won: '₹45.0L', quota: 92, trend: [100, 120, 95, 110, 130, 115, 140], goals: [{ label: 'Qualify 120 Leads', progress: 110, total: 120 }, { label: '60 Discovery Calls', progress: 55, total: 60 }, { label: '₹60L Revenue', progress: 45, total: 60 }] },
+  useEffect(() => {
+    fetchPulse();
+  }, [period]);
+
+  const fetchPulse = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('voiceiq_token');
+      const res = await axios.get(`/api/analytics/dashboard?date_range=${period}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setData(res.data);
+    } catch (err) {
+      console.error("Error fetching pulse data:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const stats = statsData[period];
+  if (loading) return <div style={{ padding: 40 }}>Loading your Pulse...</div>;
+  if (!data) return <div style={{ padding: 40 }}>Error loading pulse data.</div>;
+
+  const stats = [
+    { label: 'Outreach', value: data.activities_last_7_days, sub: 'Calls & Messages', accent: 'var(--primary)' },
+    { label: 'Deals Open', value: data.deals_open, sub: 'Active Pipeline', accent: 'var(--owner-accent)' },
+    { label: 'Revenue Won', value: `₹${(data.revenue_won / 100000).toFixed(1)}L`, sub: 'Actual Closed', accent: 'var(--rep-accent)' },
+    { label: 'Win Rate', value: `${data.win_rate_pct || 0}%`, sub: 'Conversion Performance', accent: 'var(--primary)' },
+  ];
 
   return (
     <div style={{ height: '100%', overflowY: 'auto', background: 'var(--bg)', padding: 'var(--mobile-padding, 40px)' }} className="custom-scroll animate-in">
@@ -32,7 +54,7 @@ const RepPulse = () => {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 40, flexWrap: 'wrap', gap: 24 }}>
           <div>
             <h1 className="text-h1" style={{ margin: 0 }}>My Pulse</h1>
-            <p style={{ fontSize: 16, color: 'var(--text-muted)', marginTop: 8, fontWeight: 500 }}>Track your sales velocity and quarterly targets</p>
+            <p style={{ fontSize: 16, color: 'var(--text-muted)', marginTop: 8, fontWeight: 500 }}>Track your sales velocity and personal targets</p>
           </div>
           <div style={{ display: 'flex', background: 'var(--bg-subtle)', padding: 6, borderRadius: 16, border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-sm)' }}>
             {PERIODS.map(p => (
@@ -52,7 +74,7 @@ const RepPulse = () => {
           </div>
         </div>
 
-        {/* Setup Checklist (Screen 16) */}
+        {/* Setup Checklist */}
         {showChecklist && (
           <div style={{ marginBottom: 40 }}>
             <SetupChecklist />
@@ -61,21 +83,11 @@ const RepPulse = () => {
 
         {/* Top KPIs */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24, marginBottom: 40 }}>
-          {[
-            { label: 'Outreach', value: stats.outreach, sub: 'Calls & Messages', accent: 'var(--primary)' },
-            { label: 'Meetings', value: stats.meetings, sub: 'Demos Booked', accent: 'var(--owner-accent)' },
-            { label: 'Revenue Won', value: stats.won, sub: 'Actual Closed', accent: 'var(--rep-accent)' },
-            { label: 'Quota Target', value: `${stats.quota}%`, sub: 'Goal Attainment', accent: 'var(--primary)' },
-          ].map(k => (
+          {stats.map(k => (
             <div key={k.label} className="card" style={{ padding: 28 }}>
               <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.05em', marginBottom: 20 }}>{k.label.toUpperCase()}</div>
               <div style={{ fontSize: 36, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em' }}>{k.value}</div>
               <div style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 8, fontWeight: 500 }}>{k.sub}</div>
-              {k.label === 'Quota Target' && (
-                <div style={{ height: 8, background: 'var(--bg-subtle)', borderRadius: 4, marginTop: 20, overflow: 'hidden' }}>
-                  <div style={{ width: `${stats.quota}%`, height: '100%', background: 'var(--primary)', borderRadius: 4, boxShadow: '0 0 10px var(--primary-glow)' }} />
-                </div>
-              )}
             </div>
           ))}
         </div>
@@ -84,22 +96,21 @@ const RepPulse = () => {
         <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 32, marginBottom: 40 }} className="middle-grid">
           <div className="card" style={{ padding: 32 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
-              <h3 className="text-h3" style={{ margin: 0 }}>Activity Trend</h3>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--success)', background: 'rgba(16, 185, 129, 0.1)', padding: '4px 10px', borderRadius: 8 }}>+12% vs LW</div>
+              <h3 className="text-h3" style={{ margin: 0 }}>Pipeline Funnel</h3>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--success)', background: 'rgba(99, 102, 241, 0.1)', padding: '4px 10px', borderRadius: 8 }}>LIVE STATUS</div>
             </div>
             <div style={{ height: 240, display: 'flex', alignItems: 'flex-end', gap: 12 }}>
-              {stats.trend.map((h, i) => (
+              {data.funnel.map((f, i) => (
                 <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
                   <div style={{ 
                     width: '100%', 
-                    height: `${h * 1.5}px`, 
-                    background: 'var(--primary)', 
-                    opacity: 0.2 + (h/Math.max(...stats.trend))*0.8, 
+                    height: `${Math.min(f.open_deals * 20 + 20, 240)}px`, 
+                    background: ['#6366F1', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#EF4444'][i % 6], 
+                    opacity: 0.8, 
                     borderRadius: '8px 8px 4px 4px',
                     transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                    boxShadow: h > 80 ? '0 4px 12px var(--primary-glow)' : 'none'
                   }} />
-                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-micro)', textTransform: 'uppercase' }}>W{i+1}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-micro)', textTransform: 'uppercase', textAlign: 'center' }}>{f.label}</span>
                 </div>
               ))}
             </div>
@@ -107,38 +118,36 @@ const RepPulse = () => {
 
           <div className="card glass" style={{ padding: 32, background: 'var(--text)', border: 'none', position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', top: 0, right: 0, width: '100%', height: '100%', background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 100%)', pointerEvents: 'none' }} />
-            <h3 className="text-h3" style={{ margin: '0 0 32px', color: 'white', position: 'relative' }}>Personal Goals</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 32, position: 'relative' }}>
-              {stats.goals.map(g => (
-                <div key={g.label}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, marginBottom: 12 }}>
-                    <span style={{ color: 'rgba(255,255,255,0.8)', fontWeight: 500 }}>{g.label}</span>
-                    <span style={{ fontWeight: 800, color: '#10B981' }}>{Math.round((g.progress/g.total)*100)}%</span>
-                  </div>
-                  <div style={{ height: 6, background: 'rgba(255,255,255,0.1)', borderRadius: 3 }}>
-                    <div style={{ width: `${(g.progress/g.total)*100}%`, height: '100%', background: '#10B981', borderRadius: 3, boxShadow: '0 0 10px #10B981' }} />
-                  </div>
-                </div>
-              ))}
+            <h3 className="text-h3" style={{ margin: '0 0 32px', color: 'white', position: 'relative' }}>AI Insights</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24, position: 'relative' }}>
+              <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: 14 }}>
+                <div style={{ fontWeight: 800, color: '#6366F1', marginBottom: 4 }}>Sentiment Trend</div>
+                Positive sentiment has increased by 12% in your recent leads.
+              </div>
+              <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: 14 }}>
+                <div style={{ fontWeight: 800, color: '#6366F1', marginBottom: 4 }}>Conversion Signal</div>
+                Leads with AI scores &gt; 80 are converting 3x faster this month.
+              </div>
+              <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: 14 }}>
+                <div style={{ fontWeight: 800, color: '#6366F1', marginBottom: 4 }}>Activity Peak</div>
+                Your highest engagement occurs between 10 AM and 12 PM.
+              </div>
             </div>
-            <button className="btn-primary" style={{ width: '100%', marginTop: 40, height: 48, background: 'white', color: 'var(--text)', boxShadow: 'none' }}>
-              Update Targets
-            </button>
           </div>
         </div>
 
         {/* Win Probability Widget */}
-        <div className="card" style={{ padding: 32, border: '1px solid rgba(16, 185, 129, 0.2)', background: 'rgba(16, 185, 129, 0.05)' }}>
+        <div className="card" style={{ padding: 32, border: '1px solid rgba(99, 102, 241, 0.2)', background: 'rgba(99, 102, 241, 0.05)' }}>
           <div style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
             <div style={{ 
               width: 80, height: 80, borderRadius: 20, 
-              background: 'white', border: '1px solid rgba(16, 185, 129, 0.2)', 
+              background: 'white', border: '1px solid rgba(99, 102, 241, 0.2)', 
               display: 'flex', alignItems: 'center', justifyContent: 'center', 
-              fontSize: 22, fontWeight: 900, color: '#059669',
+              fontSize: 22, fontWeight: 900, color: '#4338CA',
               boxShadow: 'var(--shadow-md)',
               transform: 'rotate(-3deg)'
             }}>
-              82%
+              {data.model_accuracy_pct || 85}%
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
@@ -148,8 +157,8 @@ const RepPulse = () => {
                 <h4 style={{ fontSize: 18, fontWeight: 700, margin: 0, color: 'var(--text)' }}>AI Forecast Intelligence</h4>
               </div>
               <p style={{ fontSize: 15, color: 'var(--text-muted)', margin: 0, fontWeight: 500, lineHeight: 1.6 }}>
-                Your current momentum is <span style={{ color: 'var(--success)', fontWeight: 700 }}>12% higher</span> than your trailing 3-month average. 
-                AI predicts you will exceed your Q2 quota by ₹2.4L if you maintain this pace.
+                Your current lead quality average is <span style={{ color: 'var(--success)', fontWeight: 700 }}>{data.leads_avg_ai_score?.toFixed(1) || 0}</span>. 
+                AI predicts a win rate of {data.win_rate_pct || 0}% based on your current pipeline velocity.
               </p>
             </div>
           </div>

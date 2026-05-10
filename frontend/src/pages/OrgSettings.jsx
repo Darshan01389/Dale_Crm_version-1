@@ -1,18 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { useToast } from '../contexts/ToastContext';
 
 const TABS = ['Organisation', 'Channels', 'Billing & Plan', 'Data Export', 'Security'];
 
-const MOCK_TEAMS = [
-  { id: '1', name: 'Alpha Squad',     lead: 'Rahul Kumar', count: 4 },
-  { id: '2', name: 'Enterprise West', lead: 'Priya Sharma', count: 3 },
-];
-
 const ROLES = [
-  { name: 'Owner / Admin', desc: 'Full access.',                      users: 1 },
-  { name: 'Team Lead',     desc: 'Manages a team. Sees team pipeline.', users: 2 },
-  { name: 'Sales Rep',     desc: 'Manages own leads.',                 users: 9 },
+  { name: 'Admin', desc: 'Full access.',                      users: 1 },
+  { name: 'Manager',     desc: 'Manages a team. Sees team pipeline.', users: 2 },
+  { name: 'Sales',     desc: 'Manages own leads.',                 users: 9 },
 ];
 
 const PIPELINE_OPTIONS = ['E-commerce / D2C', 'Real Estate', 'B2B SaaS / Tech', 'Home / Local Services', 'Generic'];
@@ -23,10 +19,30 @@ const OrgSettings = () => {
 
   const [orgName, setOrgName]       = useState('DaleIQ Demo Org');
   const [savedName, setSavedName]   = useState('DaleIQ Demo Org');
-  const [teams, setTeams]           = useState(MOCK_TEAMS);
+  const [teams, setTeams]           = useState([]);
   const [addingTeam, setAddingTeam] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
   const [pipeline, setPipeline]     = useState('B2B SaaS / Tech');
+  const [loading, setLoading]       = useState(true);
+
+  useEffect(() => {
+    fetchTeams();
+  }, []);
+
+  const fetchTeams = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('voiceiq_token');
+      const res = await axios.get('/api/teams', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setTeams(res.data);
+    } catch (err) {
+      console.error("Error fetching teams:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const dirty = orgName !== savedName;
 
@@ -35,23 +51,28 @@ const OrgSettings = () => {
     show({ type: 'success', message: 'Organisation name updated.' });
   };
 
-  const deleteTeam = (id) => {
-    setTeams(prev => prev.filter(t => t.id !== id));
-    show({ type: 'success', message: 'Team removed.' });
-  };
-
-  const addTeam = () => {
+  const addTeam = async () => {
     if (!newTeamName.trim()) return;
-    setTeams(prev => [...prev, { id: Date.now().toString(), name: newTeamName, lead: '—', count: 0 }]);
-    setNewTeamName('');
-    setAddingTeam(false);
-    show({ type: 'success', message: 'Team added.' });
+    try {
+      const token = localStorage.getItem('voiceiq_token');
+      await axios.post('/api/teams', { name: newTeamName }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      show({ type: 'success', message: 'Team added.' });
+      setNewTeamName('');
+      setAddingTeam(false);
+      fetchTeams();
+    } catch (err) {
+      show({ type: 'error', message: 'Failed to add team.' });
+    }
   };
 
   const handleTab = (tab) => {
     if (tab === 'Channels')      navigate('/settings/channels');
     if (tab === 'Billing & Plan') navigate('/billing');
   };
+
+  if (loading) return <div style={{ padding: 40 }}>Loading Organization Settings...</div>;
 
   return (
     <div style={{ height: '100%', overflowY: 'auto', background: 'var(--bg)' }} className="custom-scroll animate-in">
@@ -86,9 +107,8 @@ const OrgSettings = () => {
             {teams.map(team => (
               <div key={team.id} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 20px', background: 'var(--bg-surface)', borderRadius: 10, border: '1px solid var(--border-subtle)' }}>
                 <span style={{ fontWeight: 700, fontSize: 14, background: 'var(--bg-subtle)', padding: '3px 12px', borderRadius: 20, color: 'var(--primary)' }}>{team.name}</span>
-                <span style={{ fontSize: 13, color: 'var(--text-muted)', flex: 1 }}>Lead: {team.lead}</span>
-                <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>{team.count} reps</span>
-                <button onClick={() => deleteTeam(team.id)} aria-label="Delete team" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: 18, minHeight: 'auto', minWidth: 'auto', padding: '2px 6px' }}>···</button>
+                <span style={{ fontSize: 13, color: 'var(--text-muted)', flex: 1 }}>{team.description || 'Sales Squad'}</span>
+                <button onClick={() => navigate('/team-mgmt')} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>Manage Members →</button>
               </div>
             ))}
           </div>
@@ -106,7 +126,7 @@ const OrgSettings = () => {
         {/* Roles */}
         <section style={{ marginBottom: 40 }}>
           <h3 className="text-h3" style={{ marginBottom: 4 }}>Roles</h3>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Custom roles available in Phase 2.</p>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Core roles available in DaleIQ Sales OS.</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {ROLES.map(role => (
               <div key={role.name} style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '14px 20px', background: 'var(--bg-surface)', borderRadius: 10, border: '1px solid var(--border-subtle)' }}>
@@ -114,7 +134,6 @@ const OrgSettings = () => {
                   <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text)' }}>{role.name}</div>
                   <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{role.desc}</div>
                 </div>
-                <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>{role.users} user{role.users !== 1 ? 's' : ''}</span>
               </div>
             ))}
           </div>

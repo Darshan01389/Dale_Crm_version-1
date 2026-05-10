@@ -67,7 +67,7 @@ const Billing = () => {
                   <td style={{ padding: '16px 24px', fontWeight: 600 }}>{inv.date}</td>
                   <td style={{ padding: '16px 24px', fontWeight: 800 }}>{inv.amount}</td>
                   <td style={{ padding: '16px 24px' }}>
-                    <span style={{ color: 'var(--success)', background: 'rgba(16, 185, 129, 0.1)', padding: '4px 10px', borderRadius: 12, fontSize: 12, fontWeight: 800 }}>
+                    <span style={{ color: 'var(--success)', background: 'rgba(99, 102, 241, 0.1)', padding: '4px 10px', borderRadius: 12, fontSize: 12, fontWeight: 800 }}>
                       {inv.status}
                     </span>
                   </td>

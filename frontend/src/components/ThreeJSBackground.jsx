@@ -31,7 +31,7 @@ const AnimatedMesh = () => {
       {/* Add a secondary complementary shape */}
       <Sphere args={[1, 32, 32]} position={[-2, -1, -2]}>
         <MeshDistortMaterial
-          color="#a855f7" // Purple
+          color="#4F46E5" // Purple
           attach="material"
           distort={0.4}
           speed={1.5}

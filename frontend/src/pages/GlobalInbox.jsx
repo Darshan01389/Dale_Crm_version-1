@@ -5,9 +5,9 @@ import EmptyState from '../components/EmptyState';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 
 const CONTACTS = [
-  { id: '1', name: 'Sarah Jenkins', phone: '+91 98765 43210', initials: 'SJ', color: '#1F6E43', lastMsg: 'Thanks! Will review and get back to you.', time: '2m ago', unread: 2, intent: 'high', risk: 'standard', channel: 'WhatsApp', timestamp: Date.now() - 120000 },
-  { id: '2', name: 'Michael Chen', phone: '+91 91234 56789', initials: 'MC', color: '#1F4E79', lastMsg: 'Can you send the API docs?', time: '1h ago', unread: 0, intent: 'high', risk: 'standard', channel: 'WhatsApp', timestamp: Date.now() - 3600000 },
-  { id: '3', name: 'Priya Patel', phone: '+91 94567 89012', initials: 'PP', color: '#7C4A2D', time: '3h ago', unread: 1, intent: 'standard', risk: 'standard', channel: 'voice', duration: 8, signals: ['budget approved', 'demo asked'], timestamp: Date.now() - 10800000 },
+  { id: '1', name: 'Sarah Jenkins', phone: '+91 98765 43210', initials: 'SJ', color: '#4F46E5', lastMsg: 'Thanks! Will review and get back to you.', time: '2m ago', unread: 2, intent: 'high', risk: 'standard', channel: 'WhatsApp', timestamp: Date.now() - 120000 },
+  { id: '2', name: 'Michael Chen', phone: '+91 91234 56789', initials: 'MC', color: '#4F46E5', lastMsg: 'Can you send the API docs?', time: '1h ago', unread: 0, intent: 'high', risk: 'standard', channel: 'WhatsApp', timestamp: Date.now() - 3600000 },
+  { id: '3', name: 'Priya Patel', phone: '+91 94567 89012', initials: 'PP', color: '#4F46E5', time: '3h ago', unread: 1, intent: 'standard', risk: 'standard', channel: 'voice', duration: 8, signals: ['budget approved', 'demo asked'], timestamp: Date.now() - 10800000 },
   { id: '4', name: 'Rajesh Kumar', phone: '+91 97890 12345', initials: 'RK', color: '#B4670F', lastMsg: "We'll need a discount to proceed.", time: '1d ago', unread: 0, intent: 'standard', risk: 'risk', channel: 'SMS', timestamp: Date.now() - 86400000 },
 ];
 
@@ -33,7 +33,7 @@ const THREADS = {
   ],
 };
 
-const intentColor = { high: '#1F6E43', risk: '#B4670F', standard: '#9CA3AF' };
+const intentColor = { high: '#4F46E5', risk: '#B4670F', standard: '#9CA3AF' };
 
 const GlobalInbox = () => {
   const [active, setActive] = useState(CONTACTS[0]);
@@ -192,7 +192,7 @@ const GlobalInbox = () => {
           ) : (
             sortedContacts.map(c => (
             <div key={c.id} onClick={() => handleSelect(c)} className="inbox-row" style={{ 
-              background: active.id === c.id ? 'rgba(31, 78, 121, 0.05)' : 'transparent', 
+              background: active.id === c.id ? 'rgba(79, 70, 229, 0.05)' : 'transparent', 
               padding: '24px',
               borderLeft: active.id === c.id ? '4px solid var(--primary)' : '4px solid transparent',
               cursor: 'pointer',
@@ -273,7 +273,7 @@ const GlobalInbox = () => {
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.02em' }}>{active.name}</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981' }} />
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#6366F1' }} />
               <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600 }}>Active via {channel}</span>
             </div>
           </div>
@@ -288,7 +288,7 @@ const GlobalInbox = () => {
         {/* AI Suggest Strip */}
         {showAI && (
           <div style={{ 
-            padding: '16px 24px', background: 'rgba(31, 78, 121, 0.05)', borderBottom: '1px solid var(--border-subtle)', 
+            padding: '16px 24px', background: 'rgba(79, 70, 229, 0.05)', borderBottom: '1px solid var(--border-subtle)', 
             display: 'flex', gap: 12, overflowX: 'auto', animation: 'fadeInDown 0.3s cubic-bezier(0.23, 1, 0.32, 1)' 
           }} className="hide-scroll">
             {["Hi! Just checking in...", "Following up on proposal", "Schedule discovery call", "Answer pricing query"].map((s, i) => (
@@ -377,7 +377,7 @@ const GlobalInbox = () => {
             <p style={{ 
               fontSize: 15, color: 'var(--text)', fontStyle: 'italic', margin: 0, 
               lineHeight: 1.7, borderLeft: '4px solid var(--primary)', paddingLeft: 20,
-              fontWeight: 500, background: 'rgba(31, 78, 121, 0.02)', padding: '16px 20px', borderRadius: '0 16px 16px 0'
+              fontWeight: 500, background: 'rgba(79, 70, 229, 0.02)', padding: '16px 20px', borderRadius: '0 16px 16px 0'
             }}>
               "Can we discuss the enterprise pricing for 50 users? I\'m looking for the bulk discount we discussed..."
             </p>

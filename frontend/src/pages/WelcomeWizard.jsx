@@ -165,7 +165,7 @@ const WelcomeWizard = () => {
                 </div>
               </div>
             ))}
-            <div style={{ display: 'flex', gap: 12, background: 'rgba(31, 78, 121, 0.05)', padding: '16px', borderRadius: 16, marginTop: 12, border: '1px solid rgba(31, 78, 121, 0.1)' }}>
+            <div style={{ display: 'flex', gap: 12, background: 'rgba(79, 70, 229, 0.05)', padding: '16px', borderRadius: 16, marginTop: 12, border: '1px solid rgba(79, 70, 229, 0.1)' }}>
               <span style={{ fontSize: 18 }}>✨</span>
               <p style={{ fontSize: 13, color: 'var(--primary)', margin: 0, lineHeight: 1.5, fontWeight: 600 }}>
                 You can complete deeper integration in the <span style={{ fontWeight: 800 }}>Onboarding Checklist</span> later.
