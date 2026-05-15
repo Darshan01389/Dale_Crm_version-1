@@ -6,7 +6,7 @@ const navItems = [
   {
     path: '/inbox',
     label: 'Global Inbox',
-    roles: ['Sales Rep', 'Sales', 'Team Lead', 'Manager'],
+    roles: ['Sales Rep', 'Sales', 'Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'],
     icon: (
       <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
         <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-3 3v-3z"/>
@@ -46,7 +46,7 @@ const navItems = [
   {
     path: '/',
     label: 'Dashboard',
-    roles: ['Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'],
+    roles: ['Team Lead', 'Manager'],
     icon: (
       <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
         <path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
@@ -77,7 +77,7 @@ const navItems = [
   {
     path: '/calendar',
     label: 'Calendar',
-    roles: ['Sales Rep', 'Sales', 'Team Lead', 'Manager'],
+    roles: ['Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'],
     icon: (
       <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -137,7 +137,7 @@ const navItems = [
   {
     path: '/settings',
     label: 'Account Settings',
-    roles: ['Sales Rep', 'Sales', 'Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'],
+    roles: ['Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'],
     icon: (
       <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
         <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>

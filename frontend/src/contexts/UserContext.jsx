@@ -36,12 +36,6 @@ export const UserProvider = ({ children }) => {
 
   const [profile, setProfile] = useState(() => {
     let initialProfile = defaultProfile;
-    try {
-      const saved = localStorage.getItem('voiceiq_profile');
-      if (saved) {
-        initialProfile = { ...defaultProfile, ...JSON.parse(saved) };
-      }
-    } catch {}
     applyTheme(initialProfile.role);
     return initialProfile;
   });

@@ -116,7 +116,7 @@ const App = () => {
               <AppShell>
                 <RoleRoute
                   roles={['Owner / Admin', 'Sales Admin']}
-                  element={<Dashboard />}
+                  element={<Kanban />}
                   fallback={
                     <RoleRoute
                       roles={['Team Lead', 'Manager']}
@@ -133,14 +133,14 @@ const App = () => {
         {/* Core screens */}
         {protected_route('/pulse',       RepPulse,        ['Sales Rep', 'Sales', 'Team Lead', 'Manager'])}
         {protected_route('/inbox',       GlobalInbox,     ['Sales Rep', 'Sales', 'Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
-        {protected_route('/leads',       Leads,           ['Sales Rep', 'Sales', 'Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
+        {protected_route('/leads',       Leads,           ['Sales Rep', 'Sales', 'Team Lead', 'Manager'])}
         {protected_route('/today',       Today,           ['Sales Rep', 'Sales', 'Team Lead', 'Manager'])}
         {protected_route('/coach',       CallCoach,       ['Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
-        {protected_route('/forecast',    Forecast,        ['Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
-        {protected_route('/settings',    Settings,        ['Sales Rep', 'Sales', 'Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
+        {protected_route('/forecast',    Forecast,        ['Owner / Admin', 'Sales Admin'])}
+        {protected_route('/settings',    Settings,        ['Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
         <Route path="/welcome" element={<PrivateRoute element={<WelcomeWizard />} />} />
-        {protected_route('/calendar',    Calendar,        ['Sales Rep', 'Sales', 'Team Lead', 'Manager'])}
-        {protected_route('/leads/:id',   LeadDetails,     ['Sales Rep', 'Sales', 'Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
+        {protected_route('/calendar',    Calendar,        ['Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
+        {protected_route('/leads/:id',   LeadDetails,     ['Sales Rep', 'Sales', 'Team Lead', 'Manager'])}
         {protected_route('/sources',     LeadSourceHub,   ['Owner / Admin', 'Sales Admin'])}
         {protected_route('/team-mgmt',   TeamManagement,  ['Owner / Admin', 'Sales Admin'])}
         {protected_route('/org-settings',OrgSettings,     ['Owner / Admin', 'Sales Admin'])}

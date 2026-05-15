@@ -10,7 +10,7 @@ const LeadSourceHub = () => {
   ];
 
   return (
-    <div style={{ padding: '32px 40px' }}>
+    <div style={{ padding: '32px 40px', height: '100%', overflowY: 'auto', background: 'var(--bg)' }} className="custom-scroll animate-in">
       <div style={{ marginBottom: 40 }}>
         <h1 style={{ fontSize: 28, fontWeight: 900, color: '#111827' }}>Lead Sources</h1>
         <p style={{ fontSize: 14, color: '#6B7280', marginTop: 8 }}>Configure where your leads come from and how DaleIQ AI processes them.</p>

@@ -6,6 +6,10 @@ import './index.css'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { UserProvider } from './contexts/UserContext'
 
+// Require login from first on refresh: Clear saved session on initialization
+localStorage.removeItem('voiceiq_token');
+localStorage.removeItem('voiceiq_profile');
+
 // Apply saved theme immediately to prevent flash
 const savedTheme = localStorage.getItem('voiceiq-theme') || 'light';
 if (savedTheme === 'dark') {
@@ -23,7 +27,7 @@ const themes = {
   'Owner / Admin': { color: '#4F46E5', glow: 'rgba(79, 70, 229, 0.15)' }
 };
 try {
-  const savedProfile = JSON.parse(localStorage.getItem('voiceiq_profile') || '{}');
+  const savedProfile = {}; // Don't restore profile on refresh
   const role = savedProfile.role || 'Sales Rep';
   const theme = themes[role] || themes['Team Lead'];
   document.documentElement.style.setProperty('--primary', theme.color);

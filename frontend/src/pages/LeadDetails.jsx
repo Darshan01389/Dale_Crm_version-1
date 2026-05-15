@@ -209,7 +209,7 @@ const LeadDetails = () => {
         </div>
 
         {/* Intelligence Panel (Right Sidebar) */}
-        <div className="desktop-only" style={{ width: 360, background: 'var(--bg-surface)', borderLeft: '1px solid var(--border)', flexDirection: 'column', display: 'flex', flexShrink: 0 }}>
+        <div className="desktop-only custom-scroll" style={{ width: 360, background: 'var(--bg-surface)', borderLeft: '1px solid var(--border)', flexDirection: 'column', display: 'flex', flexShrink: 0, overflowY: 'auto', height: '100%' }}>
           <div style={{ padding: '32px 28px', borderBottom: '1px solid var(--border-subtle)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
               <div style={{ padding: 6, background: 'rgba(79, 70, 229, 0.1)', borderRadius: 8 }}>
