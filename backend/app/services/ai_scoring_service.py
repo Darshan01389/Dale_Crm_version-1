@@ -78,14 +78,11 @@ def _parse_openai_content(content: str) -> tuple[float, str] | None:
 
 
 def _score_with_llm(lead: LeadCreate) -> tuple[float, str]:
-    is_groq = settings.USE_GROQ_FOR_ALL and (settings.GROQ_API_KEY or "").strip()
-    key = (settings.GROQ_API_KEY if is_groq else settings.OPENAI_API_KEY or "").strip()
-    
-    if not key:
+    if not settings.USE_OLLAMA_FOR_ALL:
         return _heuristic_score(lead)
 
-    url = "https://api.groq.com/openai/v1/chat/completions" if is_groq else "https://api.openai.com/v1/chat/completions"
-    model = settings.GROQ_MODEL if is_groq else settings.OPENAI_MODEL
+    url = f"{settings.OLLAMA_BASE_URL.rstrip('/')}/v1/chat/completions"
+    model = settings.OLLAMA_MODEL
 
     user_payload = {
         "title": lead.title,
@@ -117,13 +114,16 @@ def _score_with_llm(lead: LeadCreate) -> tuple[float, str]:
         ],
     }
 
+    headers = {
+        "Content-Type": "application/json",
+    }
+    if settings.NVIDIA_API_KEY:
+        headers["Authorization"] = f"Bearer {settings.NVIDIA_API_KEY}"
+
     req = urllib.request.Request(
         url,
         data=json.dumps(body).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {key}",
-            "Content-Type": "application/json",
-        },
+        headers=headers,
         method="POST",
     )
 
@@ -132,14 +132,14 @@ def _score_with_llm(lead: LeadCreate) -> tuple[float, str]:
             payload = json.loads(resp.read().decode("utf-8"))
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError):
         s, summ = _heuristic_score(lead)
-        provider = "Groq" if is_groq else "OpenAI"
+        provider = "Ollama"
         return s, summ + f" ({provider} request failed; heuristic blend.)"
 
     try:
         content = payload["choices"][0]["message"]["content"]
     except (KeyError, IndexError, TypeError):
         s, summ = _heuristic_score(lead)
-        provider = "Groq" if is_groq else "OpenAI"
+        provider = "Ollama"
         return s, summ + f" ({provider} response malformed; heuristic blend.)"
 
     parsed = _parse_openai_content(content)
@@ -152,12 +152,9 @@ def _score_with_llm(lead: LeadCreate) -> tuple[float, str]:
 
 def score_new_lead(lead: LeadCreate) -> tuple[float, str]:
     """
-    Runs on every new lead creation: LLM when OPENAI_API_KEY or GROQ_API_KEY is set,
+    Runs on every new lead creation: LLM when USE_OLLAMA_FOR_ALL is set,
     otherwise a deterministic heuristic.
     """
-    has_groq = settings.USE_GROQ_FOR_ALL and (settings.GROQ_API_KEY or "").strip()
-    has_openai = (settings.OPENAI_API_KEY or "").strip()
-    
-    if has_groq or has_openai:
+    if settings.USE_OLLAMA_FOR_ALL:
         return _score_with_llm(lead)
     return _heuristic_score(lead)

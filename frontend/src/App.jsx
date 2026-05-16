@@ -31,6 +31,7 @@ import AboutCommunity from './pages/AboutCommunity';
 import OfflineBanner from './components/OfflineBanner';
 import { ToastProvider } from './contexts/ToastContext';
 import { PersonaProvider } from './contexts/PersonaContext';
+import WhatsAppSimulator from './pages/WhatsAppSimulator';
 
 // mobile detection hook
 const useIsMobile = () => {
@@ -137,7 +138,7 @@ const App = () => {
         {protected_route('/today',       Today,           ['Sales Rep', 'Sales', 'Team Lead', 'Manager'])}
         {protected_route('/coach',       CallCoach,       ['Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
         {protected_route('/forecast',    Forecast,        ['Owner / Admin', 'Sales Admin'])}
-        {protected_route('/settings',    Settings,        ['Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
+        {protected_route('/settings',    Settings,        ['Sales Rep', 'Sales', 'Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
         <Route path="/welcome" element={<PrivateRoute element={<WelcomeWizard />} />} />
         {protected_route('/calendar',    Calendar,        ['Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
         {protected_route('/leads/:id',   LeadDetails,     ['Sales Rep', 'Sales', 'Team Lead', 'Manager'])}
@@ -156,7 +157,7 @@ const App = () => {
           element={
             <PrivateRoute element={
               <RoleRoute
-                roles={['Sales Rep', 'Sales', 'Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin']}
+                roles={['Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin']}
                 element={<AppShell><PipelineRoute /></AppShell>}
                 fallback="/"
               />

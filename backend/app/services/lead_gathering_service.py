@@ -7,21 +7,21 @@ from app.schemas.lead import LeadCreate, LeadIngest
 
 
 def _llm_request(body: dict) -> str:
-    is_groq = settings.USE_GROQ_FOR_ALL and (settings.GROQ_API_KEY or "").strip()
-    key = (settings.GROQ_API_KEY if is_groq else settings.OPENAI_API_KEY or "").strip()
-    
-    if not key:
-        raise ValueError("AI API key is not configured")
+    if not settings.USE_OLLAMA_FOR_ALL:
+        raise ValueError("Ollama is not enabled")
 
-    url = "https://api.groq.com/openai/v1/chat/completions" if is_groq else "https://api.openai.com/v1/chat/completions"
+    url = f"{settings.OLLAMA_BASE_URL.rstrip('/')}/v1/chat/completions"
+
+    headers = {
+        "Content-Type": "application/json",
+    }
+    if settings.NVIDIA_API_KEY:
+        headers["Authorization"] = f"Bearer {settings.NVIDIA_API_KEY}"
 
     req = urllib.request.Request(
         url,
         data=json.dumps(body).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {key}",
-            "Content-Type": "application/json",
-        },
+        headers=headers,
         method="POST",
     )
 
@@ -47,8 +47,7 @@ def _parse_extracted_lead(content: str) -> dict:
 
 
 def extract_lead_from_raw_text(ingest: LeadIngest) -> LeadCreate:
-    is_groq = settings.USE_GROQ_FOR_ALL and (settings.GROQ_API_KEY or "").strip()
-    if (not is_groq and not (settings.OPENAI_API_KEY or "").strip()) or not settings.ENABLE_OPENAI_LEAD_GATHERING:
+    if not settings.USE_OLLAMA_FOR_ALL or not settings.ENABLE_OLLAMA_LEAD_GATHERING:
         return LeadCreate(
             title=ingest.title or ingest.source_platform,
             company=ingest.company,
@@ -79,7 +78,7 @@ def extract_lead_from_raw_text(ingest: LeadIngest) -> LeadCreate:
     }
 
     body = {
-        "model": settings.GROQ_MODEL if is_groq else settings.OPENAI_MODEL,
+        "model": settings.OLLAMA_MODEL,
         "temperature": 0.1,
         "messages": [
             {"role": "system", "content": prompt},

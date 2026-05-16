@@ -8,8 +8,8 @@ from app.services.ai_scoring_service import score_new_lead
 def analyze_new_lead(lead: LeadCreate) -> dict:
     """
     XGBoost (or RF fallback) tabular scorer on the merged dataset artifact,
-    plus GPT-4o-mini sentiment when OPENAI_API_KEY is set (else VADER).
-    Falls back to OpenAI/heuristic scoring only when ML artifacts are unavailable.
+    plus Ollama sentiment when configured (else VADER).
+    Falls back to heuristic scoring only when ML artifacts are unavailable.
     """
     out = analyze_lead_ml_and_sentiment(lead)
     sentiment = out["sentiment"]

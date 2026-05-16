@@ -1,4 +1,8 @@
 # main.py (final version for Week 2)
+import sys
+import os
+# Make whatsapp_agent importable from the backend root
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -58,6 +62,9 @@ from app.routes.activities import router as activity_router
 from app.routes.deals import router as deal_router
 from app.routes.pipeline import router as pipeline_router
 from app.routes.users import router as user_router
+from app.routes.chatbot import router as chatbot_router
+from app.routes.whatsapp import router as whatsapp_router
+from app.routes.tasks import router as task_router
 
 app.include_router(auth_router)
 app.include_router(user_router)
@@ -71,6 +78,9 @@ app.include_router(pipeline_router)
 app.include_router(analytics_router)
 app.include_router(team_router)
 app.include_router(ai_router)
+app.include_router(chatbot_router)   # Merged chatbot — no separate server needed
+app.include_router(whatsapp_router)  # WhatsApp Agent + Simulator
+app.include_router(task_router)      # AI Tasks & Stagnation
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):

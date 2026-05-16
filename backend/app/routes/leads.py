@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -25,14 +25,28 @@ def get_lead_report(
 @router.get("/{lead_id}/ai-suggest")
 def suggest_reply(
     lead_id: UUID,
+    channel: str = "whatsapp",
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Generate an AI drafted response based on timeline history."""
+    """Generate an AI drafted response based on timeline history and channel."""
     report = lead_service.get_lead_report(db, lead_id, current_user)
     from app.services.openai_message_service import ai_suggest_reply
-    draft = ai_suggest_reply(report["lead"], report["activities"], report["voice_recordings"])
-    return {"draft": draft}
+    result = ai_suggest_reply(report["lead"], report["activities"], report["voice_recordings"], channel)
+    return result # result will be {"draft": "...", "subject": "..."}
+
+
+@router.get("/{lead_id}/summary")
+def get_lead_summary(
+    lead_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Generate a concise AI summary and next step for the lead."""
+    report = lead_service.get_lead_report(db, lead_id, current_user)
+    from app.services.openai_message_service import generate_ai_summary
+    summary = generate_ai_summary(report["lead"], report["activities"], report["voice_recordings"])
+    return {"summary": summary}
 
 
 @router.post("/{lead_id}/assign/{user_id}")
@@ -43,6 +57,49 @@ def assign_lead(
     current_user: User = Depends(get_current_user),
 ):
     return lead_service.assign_lead(db, lead_id, user_id, current_user.id)
+
+@router.post("/{lead_id}/request-manager")
+def request_manager(
+    lead_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Called by a Sales Rep when a lead wants to talk to a Manager.
+    Creates a high-priority task for the first available manager in the system.
+    """
+    lead = lead_service.get_lead(db, lead_id, current_user)
+    
+    # Find a manager (Owner / Admin or Team Lead)
+    manager = db.query(User).filter(User.role.in_(["Owner / Admin", "Team Lead"]), User.is_active == True).first()
+    if not manager:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="No manager found to assign this request to.")
+    
+    # Create a task for the manager
+    from app.models.task import Task
+    task = Task(
+        user_id=manager.id,
+        lead_id=lead.id,
+        title=f"📞 Manager Intervention: {lead.title}",
+        description=f"Prospect requested to speak with a manager. Lead is currently handled by {current_user.name}.",
+        priority="High",
+        task_type="Manager Call"
+    )
+    db.add(task)
+    
+    # Log activity
+    from app.models.activity import Activity
+    activity = Activity(
+        lead_id=lead.id,
+        activity_type="Manager Requested",
+        subject="Lead requested manager interaction",
+        body=f"Sales rep {current_user.name} flagged this lead for manager intervention."
+    )
+    db.add(activity)
+    
+    db.commit()
+    return {"status": "success", "message": f"Manager {manager.name} has been notified."}
 
 from app.services.ai_distribution import AIDistributionService
 from pydantic import BaseModel
@@ -66,11 +123,12 @@ def distribute_leads_ai(
 @router.post("", response_model=LeadResponse, status_code=201)
 def create_lead(
     body: LeadCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """Create a lead. AI (or heuristic) scoring runs automatically on create."""
-    return lead_service.create_lead(db, current_user, body)
+    return lead_service.create_lead(db, current_user, body, background_tasks)
 
 
 @router.get("", response_model=list[LeadResponse])

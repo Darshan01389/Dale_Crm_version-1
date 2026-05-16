@@ -11,16 +11,13 @@ from app.ml.sentiment_service import SentimentResult
 
 def sentiment_openai(notes: str | None, title: str | None) -> SentimentResult | None:
     """
-    LLM (Groq or OpenAI) structured sentiment; returns None on failure.
+    LLM (Ollama) structured sentiment; returns None on failure.
     """
-    is_groq = settings.USE_GROQ_FOR_ALL and (settings.GROQ_API_KEY or "").strip()
-    key = (settings.GROQ_API_KEY if is_groq else settings.OPENAI_API_KEY or "").strip()
-    
-    if not key:
+    if not settings.USE_OLLAMA_FOR_ALL:
         return None
 
-    url = "https://api.groq.com/openai/v1/chat/completions" if is_groq else "https://api.openai.com/v1/chat/completions"
-    model = settings.GROQ_MODEL if is_groq else settings.OPENAI_MODEL
+    url = f"{settings.OLLAMA_BASE_URL.rstrip('/')}/v1/chat/completions"
+    model = settings.OLLAMA_MODEL
 
     text = " ".join(p for p in [title or "", notes or ""] if p).strip()
     if not text:
@@ -50,13 +47,16 @@ def sentiment_openai(notes: str | None, title: str | None) -> SentimentResult | 
         ],
     }
 
+    headers = {
+        "Content-Type": "application/json",
+    }
+    if settings.NVIDIA_API_KEY:
+        headers["Authorization"] = f"Bearer {settings.NVIDIA_API_KEY}"
+
     req = urllib.request.Request(
         url,
         data=json.dumps(body).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {key}",
-            "Content-Type": "application/json",
-        },
+        headers=headers,
         method="POST",
     )
 

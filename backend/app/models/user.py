@@ -24,6 +24,8 @@ class User(Base):
     role = Column(String, default="Sales Rep")  # Sales Rep / Team Lead / Owner / Admin
     team_id = Column(UUID(as_uuid=True), ForeignKey("teams.id"), nullable=True)
     is_active = Column(Boolean, default=True)
+    whatsapp_number = Column(String(20), nullable=True)  # Company WhatsApp number for Sales/Team Lead
+    company_email = Column(String, nullable=True)        # Company Email for outreach
     max_active_leads = Column(Integer, default=50)
     current_active_leads = Column(Integer, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

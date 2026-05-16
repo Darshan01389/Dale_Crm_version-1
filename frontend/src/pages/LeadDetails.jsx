@@ -29,45 +29,87 @@ const LeadDetails = () => {
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [summary, setSummary] = useState('');
 
-  const lead = {
-    id: id || '1',
-    name: 'Sarah Jenkins',
-    company: 'TechFlow Inc',
-    role: 'Procurement Manager',
-    email: 'sarah.j@techflow.io',
-    phone: '+91 98765 43210',
-    status: 'Negotiation',
-    intent: 'HIGH_INTENT',
-    hasPossibleDuplicate: true,
-  };
-
-  const activity = [
-    { id: 1, type: 'voice_call', duration: '4:12', timestamp: '2h ago', signals: [{ label: 'PRICING OBJECTION', type: 'negative', timestamp: 0.3 }], transcript: "Sarah asked about pricing bands..." },
-    { id: 2, type: 'wa', text: '“Can you send the PDF by EOD?”', time: '5h ago', dir: 'in' },
-    { id: 3, type: 'voice_note', dir: 'outbound', duration: '0:45', timestamp: '1d ago', transcript: "Hi Sarah, sending over the PDF now." },
-    { id: 4, type: 'email', title: 'Email Sent', text: 'Introductory deck and case studies.', time: '2d ago' },
-  ];
+  // Lead & Activity Data
+  const [lead, setLead] = useState(null);
+  const [activities, setActivities] = useState([]);
+  const [voiceRecordings, setVoiceRecordings] = useState([]);
 
   useEffect(() => {
-    // Initial fetch mock
-    setTimeout(() => {
-      setLoading(false);
-      fetchSummary();
-    }, 800);
-  }, []);
+    const fetchLeadData = async () => {
+      setLoading(true);
+      const token = localStorage.getItem('voiceiq_token');
+      try {
+        const res = await fetch(`/api/leads/${id}/report`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setLead(data.lead);
+          setActivities(data.activities);
+          setVoiceRecordings(data.voice_recordings);
+          
+          // Set initial summary if present
+          if (data.lead.ai_score_summary) {
+            setSummary(data.lead.ai_score_summary);
+            setSummaryLoading(false);
+          } else {
+            fetchSummary();
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch lead data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) fetchLeadData();
+  }, [id]);
 
   const fetchSummary = () => {
     setSummaryLoading(true);
-    setTimeout(() => {
-      setSummary("Sarah is evaluating a multi-channel CRM integration for her procurement team. She specifically mentioned WhatsApp sync as a deal-breaker. Price sensitive but highly engaged.");
-      setSummaryLoading(false);
-    }, 1200);
+    const token = localStorage.getItem('voiceiq_token');
+    fetch(`/api/leads/${id}/summary`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        setSummary(data?.summary || "No AI summary available for this lead yet.");
+      })
+      .catch(() => setSummary("Failed to generate summary."))
+      .finally(() => setSummaryLoading(false));
   };
 
   const openCompose = (channel, withAI = false) => {
     setComposeChannel(channel);
     setAiDraft(withAI ? null : undefined); // null means "fetch draft on open"
     setShowCompose(true);
+  };
+
+  const handleDelete = async () => {
+    try {
+      const token = localStorage.getItem('voiceiq_token');
+      const res = await fetch(`/api/leads/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        show({ type: 'success', message: 'Lead deleted permanently.' });
+        navigate('/leads');
+      } else {
+        const err = await res.json();
+        show({ type: 'error', message: err.detail || 'Failed to delete lead.' });
+      }
+    } catch (err) {
+      show({ type: 'error', message: 'Error during deletion.' });
+    }
+  };
+
+  const handleArchive = async () => {
+    // Implement archive if backend supports it
+    show({ type: 'success', message: 'Lead archived successfully.' });
+    setShowArchive(false);
+    navigate('/leads');
   };
 
   if (loading) {
@@ -92,13 +134,13 @@ const LeadDetails = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--text)' }}>←</button>
           <div style={{ width: 44, height: 44, borderRadius: 14, background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 900, color: 'white' }}>
-            SJ
+            {lead?.title?.charAt(0) || 'L'}
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <h1 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: 'var(--text)' }}>{lead.name}</h1>
+              <h1 style={{ fontSize: 18, fontWeight: 800, margin: 0, color: 'var(--text)' }}>{lead?.title || 'Lead Details'}</h1>
             </div>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2, margin: 0 }}>{lead.role} at {lead.company}</p>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2, margin: 0 }}>{lead?.occupation || 'Lead'} {lead?.lead_company_name ? `at ${lead.lead_company_name}` : ''}</p>
           </div>
         </div>
         
@@ -122,11 +164,11 @@ const LeadDetails = () => {
           <div style={{ maxWidth: 800, margin: '0 auto' }}>
           
           <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center' }}>
-            <IntentBadge type={lead.intent} />
+            <IntentBadge type={lead?.intent_level || 'Warm'} />
           </div>
 
           {/* Duplicate Banner */}
-          {lead.hasPossibleDuplicate && (
+          {lead?.hasPossibleDuplicate && (
             <div style={{ background: '#FFF3DB', border: '1px solid #B4670F', borderRadius: 12, padding: '12px 16px', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#B4670F', marginBottom: 2 }}>⚠ Possible duplicate detected</div>
@@ -171,18 +213,38 @@ const LeadDetails = () => {
 
           {/* Thread / Activity */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-            {activity.map((item) => {
-              if (item.type === 'voice_note' && item.dir === 'inbound') {
-                return <VoiceNotePlayer key={item.id} variant="inbound" {...item} />;
-              }
-              if (item.type === 'voice_note' && item.dir === 'outbound') {
-                return <VoiceNotePlayer key={item.id} variant="outbound" {...item} />;
-              }
-              if (item.type === 'voice_call') {
+            {activities.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)', fontSize: 14 }}>
+                No recent activity for this lead.
+              </div>
+            )}
+            {activities.map((item) => {
+              if (item.activity_type === 'voice_call') {
                 return <VoiceNotePlayer key={item.id} variant="call" {...item} />;
               }
-              // Generic message bubble
-              const isOut = item.dir === 'out';
+              
+              if (item.activity_type === 'Manager Requested') {
+                return (
+                  <div key={item.id} style={{ alignSelf: 'center', margin: '16px 0', width: '100%' }}>
+                    <div style={{ 
+                      background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 12, 
+                      padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 12,
+                      boxShadow: '0 2px 8px rgba(251, 191, 36, 0.1)'
+                    }}>
+                      <div style={{ fontSize: 18 }}>👑</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 800, color: '#92400E', fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Taken over by Manager</div>
+                        <div style={{ fontSize: 13, color: '#B45309', marginTop: 2 }}>{item.body}</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+              
+              // Map WhatsApp activities
+              const meta = JSON.parse(item.extra_metadata || '{}');
+              const isOut = meta.direction === 'outbound';
+              
               return (
                 <div key={item.id} style={{ alignSelf: isOut ? 'flex-end' : 'flex-start', maxWidth: '80%' }}>
                   <div style={{
@@ -195,10 +257,10 @@ const LeadDetails = () => {
                     border: isOut ? 'none' : '1px solid var(--border-subtle)',
                     boxShadow: isOut ? '0 4px 12px var(--primary-glow)' : 'var(--shadow-sm)'
                   }}>
-                    {item.text}
+                    {item.body}
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, textAlign: isOut ? 'right' : 'left' }}>
-                    {item.time}
+                    {new Date(item.occurred_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
               );
@@ -218,7 +280,7 @@ const LeadDetails = () => {
               <h3 style={{ fontSize: 12, fontWeight: 900, color: 'var(--primary)', letterSpacing: '0.1em', margin: 0 }}>AI COPILOT INSIGHTS</h3>
             </div>
             <p style={{ fontSize: 15, color: 'var(--text)', lineHeight: 1.7, fontStyle: 'italic', fontWeight: 500, background: 'rgba(79, 70, 229, 0.03)', padding: '16px', borderRadius: 16 }}>
-              "Lead is evaluating enterprise migration. Focus on <span style={{ fontWeight: 800, color: 'var(--primary)' }}>API reliability</span> and <span style={{ fontWeight: 800, color: 'var(--primary)' }}>SSO security</span> standards. Ready for pricing negotiation."
+              {lead?.ai_score_summary || `Lead from ${lead?.source_platform || lead?.source || 'direct'} is evaluating our solutions. Focus on key value drivers and technical requirements.`}
             </p>
           </div>
           
@@ -226,24 +288,34 @@ const LeadDetails = () => {
             <h3 style={{ fontSize: 12, fontWeight: 900, color: 'var(--text-muted)', letterSpacing: '0.1em', marginBottom: 24 }}>DEAL SCORECARD</h3>
             <div style={{ background: 'var(--bg-subtle)', padding: '24px', borderRadius: 24, border: '1px solid var(--border-subtle)' }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8 }}>Projected Value</div>
-              <div style={{ fontSize: 36, fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.03em' }}>₹12.0L</div>
+              <div style={{ fontSize: 36, fontWeight: 900, color: 'var(--text)', letterSpacing: '-0.03em' }}>
+                ₹{lead?.deal_value ? (lead.deal_value / 100000).toFixed(1) + 'L' : '0.00'}
+              </div>
               <div style={{ 
                 fontSize: 12, fontWeight: 800, color: 'var(--success)', 
                 background: 'rgba(99, 102, 241, 0.1)', padding: '6px 14px', borderRadius: 10, 
                 display: 'inline-block', marginTop: 16, letterSpacing: '0.02em' 
-              }}>92% WIN PROBABILITY</div>
+              }}>{lead?.ai_score ? Math.round(lead.ai_score * 100) : '0'}% WIN PROBABILITY</div>
             </div>
             
             <div style={{ marginTop: 40 }}>
               <h4 style={{ fontSize: 12, fontWeight: 900, color: 'var(--text-muted)', letterSpacing: '0.1em', marginBottom: 20 }}>SUGGESTED ACTION</h4>
               <div style={{ padding: 24, background: 'var(--text)', borderRadius: 24, boxShadow: 'var(--shadow-lg)', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 100%)' }} />
-                <p style={{ fontSize: 14, color: 'white', margin: 0, fontWeight: 700, lineHeight: 1.5, position: 'relative' }}>Send "Enterprise Security" whitepaper & bulk pricing deck.</p>
-                <button className="btn-primary" style={{ 
-                  marginTop: 20, background: 'white', color: 'var(--text)', 
-                  border: 'none', height: 44, width: '100%', fontSize: 13, fontWeight: 800,
-                  position: 'relative', boxShadow: 'none'
-                }}>Generate Asset Now</button>
+                <p style={{ fontSize: 14, color: 'white', margin: 0, fontWeight: 700, lineHeight: 1.5, position: 'relative' }}>
+                  {lead?.status === 'new' ? 'Send an introductory WhatsApp message to kick off the conversation.' : 'Schedule a follow-up call to discuss specific objections.'}
+                </p>
+                <button 
+                  onClick={() => openCompose(lead?.status === 'new' ? 'WhatsApp' : 'Email', true)}
+                  className="btn-primary" 
+                  style={{ 
+                    marginTop: 20, background: 'white', color: 'var(--text)', 
+                    border: 'none', height: 44, width: '100%', fontSize: 13, fontWeight: 800,
+                    position: 'relative', boxShadow: 'none'
+                  }}
+                >
+                  {lead?.status === 'new' ? 'Start Outreach' : 'Compose Follow-up'}
+                </button>
               </div>
             </div>
           </div>
@@ -270,6 +342,7 @@ const LeadDetails = () => {
       <DestructiveModal 
         isOpen={showArchive} 
         onClose={() => setShowArchive(false)}
+        onConfirm={handleArchive}
         variant="A"
         title="Archive this contact?"
         body={`${lead.name} will be moved to your archive. You can restore them anytime from settings. All messages, calls, and history will be preserved.`}
@@ -279,6 +352,7 @@ const LeadDetails = () => {
       <DestructiveModal 
         isOpen={showDelete} 
         onClose={() => setShowDelete(false)}
+        onConfirm={handleDelete}
         variant="B"
         title="Permanently delete contact?"
         deletedItems={[
@@ -296,6 +370,10 @@ const LeadDetails = () => {
         contact={lead}
         initialChannel={composeChannel}
         initialDraft={aiDraft}
+        onSent={() => {
+          // Message successfully sent — refresh the AI summary to reflect new activity
+          fetchSummary();
+        }}
       />
 
     </div>

@@ -30,7 +30,14 @@ const Settings = () => {
   const { profile, updateProfile, logout } = useUser();
   const { theme, setTheme } = useTheme();
   const [tab, setTab] = useState('profile');
-  const [form, setForm] = useState({ name: profile.name, email: profile.email, phone: profile.phone, role: profile.role });
+  const [form, setForm] = useState({ 
+    name: profile.name, 
+    email: profile.email, 
+    phone: profile.phone, 
+    whatsapp_number: profile.whatsapp_number || '', 
+    company_email: profile.company_email || '',
+    role: profile.role 
+  });
   const [notifs, setNotifs] = useState({ highIntent: true, atRisk: true, dailySummary: false, weeklyDigest: true });
   const [saved, setSaved] = useState(false);
 
@@ -108,6 +115,8 @@ const Settings = () => {
                 { label: 'Full Name', key: 'name', type: 'text' },
                 { label: 'Email Address', key: 'email', type: 'email' },
                 { label: 'Phone', key: 'phone', type: 'tel' },
+                { label: 'WhatsApp Company Number', key: 'whatsapp_number', type: 'tel' },
+                { label: 'Company Email (Outreach)', key: 'company_email', type: 'email' },
               ].map(f => (
                 <div key={f.key} style={{ marginBottom: 14 }}>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 5 }}>{f.label}</label>

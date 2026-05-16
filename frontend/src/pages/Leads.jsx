@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useUser } from '../contexts/UserContext';
+import { useToast } from '../contexts/ToastContext';
 import AddContactModal from '../components/AddContactModal';
 
 const MOCK_LEADS = [
@@ -29,6 +30,7 @@ const stageColors = {
 const Leads = () => {
   const navigate = useNavigate();
   const { profile } = useUser();
+  const { show } = useToast();
   const [leads, setLeads] = useState([]);
   const [search, setSearch] = useState('');
   const [stageFilter, setStageFilter] = useState('All');
@@ -78,22 +80,24 @@ const Leads = () => {
       source: l.source || '—',
       lastContact,
       email: l.email,
+      ai_summary: l.ai_score_summary,
     };
   });
 
+  const loadLeads = async () => {
+    try {
+      const token = localStorage.getItem('voiceiq_token');
+      const res = await fetch('/api/leads', { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        const d = await res.json();
+        setLeads(d.length ? normalizeLeads(d) : MOCK_LEADS);
+        return;
+      }
+    } catch {}
+    setLeads(MOCK_LEADS);
+  };
+
   useEffect(() => {
-    const loadLeads = async () => {
-      try {
-        const token = localStorage.getItem('voiceiq_token');
-        const res = await fetch('/api/leads', { headers: { Authorization: `Bearer ${token}` } });
-        if (res.ok) {
-          const d = await res.json();
-          setLeads(d.length ? normalizeLeads(d) : MOCK_LEADS);
-          return;
-        }
-      } catch {}
-      setLeads(MOCK_LEADS);
-    };
     loadLeads();
   }, []);
 
@@ -171,9 +175,9 @@ const Leads = () => {
                   await axios.post('/api/leads/distribute-ai', { lead_ids: leadIds }, {
                     headers: { Authorization: `Bearer ${token}` }
                   });
-                  alert('Leads distributed via AI matching!');
+                  show({ type: 'success', message: 'Leads distributed via AI matching!' });
                 } catch (err) {
-                  alert('Error distributing leads. Ensure you have teams and reps assigned.');
+                  show({ type: 'error', message: 'Error distributing leads. Ensure you have teams and reps assigned.' });
                 }
               }} 
               className="btn-secondary" 
@@ -237,25 +241,64 @@ const Leads = () => {
                   </span>
                 </td>
                 <td style={{ padding: '20px 24px', borderTop: '1px solid var(--border-subtle)', borderBottom: '1px solid var(--border-subtle)' }}>
-                  <span style={{ 
-                    padding: '6px 12px', borderRadius: 8, 
-                    background: lead.intent === 'high' ? 'rgba(99, 102, 241, 0.1)' : lead.intent === 'risk' ? 'rgba(217, 119, 6, 0.1)' : 'var(--bg-subtle)',
-                    color: lead.intent === 'high' ? 'var(--success)' : lead.intent === 'risk' ? 'var(--owner-accent)' : 'var(--text-muted)',
-                    fontSize: 11, fontWeight: 800, letterSpacing: '0.02em'
-                  }}>
-                    {intentBadge[lead.intent]?.label.toUpperCase() || lead.intent.toUpperCase()}
-                  </span>
+                  {lead.ai_summary === 'AI analysis in progress...' ? (
+                    <span style={{ 
+                      padding: '6px 12px', borderRadius: 8, 
+                      background: 'var(--bg-subtle)',
+                      color: 'var(--text-muted)',
+                      fontSize: 11, fontWeight: 800, letterSpacing: '0.02em',
+                      display: 'flex', alignItems: 'center', gap: 6
+                    }}>
+                      <div className="shimmer-fast" style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primary)' }} />
+                      ANALYZING...
+                    </span>
+                  ) : (
+                    <span style={{ 
+                      padding: '6px 12px', borderRadius: 8, 
+                      background: lead.intent === 'high' ? 'rgba(99, 102, 241, 0.1)' : lead.intent === 'risk' ? 'rgba(217, 119, 6, 0.1)' : 'var(--bg-subtle)',
+                      color: lead.intent === 'high' ? 'var(--success)' : lead.intent === 'risk' ? 'var(--owner-accent)' : 'var(--text-muted)',
+                      fontSize: 11, fontWeight: 800, letterSpacing: '0.02em'
+                    }}>
+                      {intentBadge[lead.intent]?.label.toUpperCase() || lead.intent.toUpperCase()}
+                    </span>
+                  )}
                 </td>
                 <td style={{ padding: '20px 24px', fontWeight: 800, color: 'var(--text)', fontSize: 16, borderTop: '1px solid var(--border-subtle)', borderBottom: '1px solid var(--border-subtle)' }}>{lead.value}</td>
                 <td style={{ padding: '20px 24px', color: 'var(--text-muted)', fontSize: 13, fontWeight: 600, borderTop: '1px solid var(--border-subtle)', borderBottom: '1px solid var(--border-subtle)' }}>{lead.lastContact}</td>
                 <td style={{ padding: '20px 24px', borderRadius: '0 16px 16px 0', border: '1px solid var(--border-subtle)', borderLeft: 'none', textAlign: 'right' }}>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); navigate(`/leads/${lead.id}`); }}
-                    className="btn-secondary" 
-                    style={{ height: 36, padding: '0 16px', fontSize: 12, fontWeight: 700 }}
-                  >
-                    Open Profile
-                  </button>
+                  <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                    {profile?.role === 'Sales Rep' && (
+                      <button 
+                        onClick={async (e) => { 
+                          e.stopPropagation();
+                          if (!window.confirm(`Request manager intervention for ${lead.name}?`)) return;
+                          try {
+                            const token = localStorage.getItem('voiceiq_token');
+                            const res = await fetch(`/api/leads/${lead.id}/request-manager`, {
+                              method: 'POST',
+                              headers: { Authorization: `Bearer ${token}` }
+                            });
+                            if (res.ok) {
+                              show({ type: 'success', message: 'Manager has been notified! This lead is now on their Today Tasks.' });
+                            }
+                          } catch (err) {
+                            show({ type: 'error', message: 'Failed to notify manager.' });
+                          }
+                        }}
+                        className="btn-secondary" 
+                        style={{ height: 36, padding: '0 12px', fontSize: 11, fontWeight: 800, background: '#FEF3C7', color: '#92400E', border: '1px solid #FDE68A' }}
+                      >
+                        Manager
+                      </button>
+                    )}
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); navigate(`/leads/${lead.id}`); }}
+                      className="btn-secondary" 
+                      style={{ height: 36, padding: '0 16px', fontSize: 12, fontWeight: 700 }}
+                    >
+                      Open Profile
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -275,6 +318,7 @@ const Leads = () => {
       <AddContactModal 
         isOpen={showModal} 
         onClose={() => setShowModal(false)} 
+        onSuccess={loadLeads}
       />
 
       {/* Mobile FAB */}

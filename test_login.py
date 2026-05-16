@@ -4,7 +4,7 @@ import requests
 url = "http://localhost:8000/auth/login"
 data = {
     "email": "admin@gmail.com",
-    "password": "password123"
+    "password": "admin@123"
 }
 
 try:

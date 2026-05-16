@@ -1,0 +1,147 @@
+Total buttons found: 145
+Buttons missing onClick (and not type=submit): 92
+
+--- Buttons missing functionality ---
+File: AddContactModal.jsx | Text: { if (isDuplicate) { alert('Redirecting to Merge V... | Type: button
+File: AIAssistant.jsx | Text: setIsOpen(false)} style={{ background: 'none', bor... | Type: button
+File: ComposeModal.jsx | Text: setChannel(ch)} style={{ flex: 1, padding: '10px',... | Type: button
+File: ComposeModal.jsx | Text: setShowAI(!showAI)} style={{ background: 'none', b... | Type: button
+File: ComposeModal.jsx | Text: { setMsg(s); setShowAI(false); }} style={{ padding... | Type: button
+File: ComposeModal.jsx | Text: Send Message | Type: button
+File: ConfirmModal.jsx | Text: { onConfirm(); onClose(); }} style={{ padding: '0.... | Type: button
+File: DestructiveModal.jsx | Text: onConfirm?.(goodbyeChecked)} style={{ padding: '10... | Type: button
+File: Header.jsx | Text: setNotifOpen(true)} style={{ position: 'relative',... | Type: button
+File: Header.jsx | Text: setProfileOpen(!profileOpen)} style={{ display: 'f... | Type: button
+File: Header.jsx | Text: { navigate('/settings'); setProfileOpen(false); }}... | Type: button
+File: NetworkErrorBoundary.jsx | Text: window.location.reload()} style={{ background: 'va... | Type: button
+File: NotificationPanel.jsx | Text: setFilter(f)} style={{ padding: '8px 16px', border... | Type: button
+File: NotificationPanel.jsx | Text: { navigate('/settings'); onClose(); }} style={{ ba... | Type: button
+File: OfflineBanner.jsx | Text: window.location.reload()} aria-label="Retry connec... | Type: button
+File: QuotaWarning.jsx | Text: setIsVisible(false)} style={{ background: 'transpa... | Type: button
+File: SetupChecklist.jsx | Text: setDismissed(true)} style={{ background: 'none', b... | Type: button
+File: SetupChecklist.jsx | Text: Start → | Type: button
+File: VoiceNotePlayer.jsx | Text: View full transcript → | Type: button
+File: AboutCommunity.jsx | Text: Access Forums → | Type: button
+File: Billing.jsx | Text: Upgrade Plan | Type: button
+File: Billing.jsx | Text: window.open('#', '_blank')} style={{ background: '... | Type: button
+File: Calendar.jsx | Text: setView(v)} style={{ padding: '7px 18px', borderRa... | Type: button
+File: Calendar.jsx | Text: setShowNewMeeting(true)} className="btn-primary" s... | Type: button
+File: Calendar.jsx | Text: setSelectedEvent(null)} style={{ background: 'none... | Type: button
+File: Calendar.jsx | Text: window.open(selectedEvent?.meeting_link, '_blank')... | Type: button
+File: Calendar.jsx | Text: setShowReschedule(true)} style={{ flex: 1, padding... | Type: button
+File: Calendar.jsx | Text: setShowReschedule(false)} style={{ background: 'no... | Type: button
+File: Calendar.jsx | Text: { alert('Meeting scheduled successfully!'); setSho... | Type: button
+File: CallCoach.jsx | Text: Share Feedback | Type: button
+File: ChannelSettings.jsx | Text: handleTab(tab)} style={{ padding: '12px 20px', bor... | Type: button
+File: ChannelSettings.jsx | Text: show({ type: 'info', message: 'Channel configurati... | Type: button
+File: ComposeSheet.jsx | Text: setChannel(ch)} style={{ flex: 1, padding: '8px 4p... | Type: button
+File: ComposeSheet.jsx | Text: setEditing(!editing)} style={{ flex: 1, padding: '... | Type: button
+File: Forecast.jsx | Text: setPeriod(p)} style={{ padding: '8px 16px', border... | Type: button
+File: GlobalInbox.jsx | Text: setShowCompose(true)} className="btn-primary" styl... | Type: button
+File: GlobalInbox.jsx | Text: setSortTab(t)} style={{ padding: '8px 16px', fontS... | Type: button
+File: GlobalInbox.jsx | Text: setView('list')} style={{ background: 'none', bord... | Type: button
+File: GlobalInbox.jsx | Text: 📞 Call Prospect | Type: button
+File: GlobalInbox.jsx | Text: setShowAI(!showAI)}> <span style={{ marginRight: 8... | Type: button
+File: GlobalInbox.jsx | Text: applyAISuggestion(s)} style={{ background: 'var(--... | Type: button
+File: GlobalInbox.jsx | Text: <svg width="24" height="24" fill="white" viewBox="... | Type: button
+File: GlobalInbox.jsx | Text: 📎 | Type: button
+File: GlobalInbox.jsx | Text: 😊 | Type: button
+File: HelpSupport.jsx | Text: Email Ram | Type: button
+File: Kanban.jsx | Text: Export | Type: button
+File: Kanban.jsx | Text: setShowAddModal(true)} style={{ padding: '10px 18p... | Type: button
+File: Kanban.jsx | Text: setShowAddModal(true)} style={{ background: 'var(-... | Type: button
+File: Kanban.jsx | Text: setFilter(f => ({ ...f, rep: r }))} style={{ paddi... | Type: button
+File: Kanban.jsx | Text: setFilter(f => ({ ...f, intent: k }))} style={{ pa... | Type: button
+File: Kanban.jsx | Text: setShowAddModal(true)} style={{ position: 'fixed',... | Type: button
+File: LeadDetails.jsx | Text: navigate(-1)} style={{ background: 'none', border:... | Type: button
+File: LeadDetails.jsx | Text: setShowMenu(!showMenu)} style={{ background: 'none... | Type: button
+File: LeadDetails.jsx | Text: { setShowMenu(false); setShowReassign(true); }} st... | Type: button
+File: LeadDetails.jsx | Text: { setShowMenu(false); setShowArchive(true); }} sty... | Type: button
+File: LeadDetails.jsx | Text: { setShowMenu(false); setShowDelete(true); }} styl... | Type: button
+File: LeadDetails.jsx | Text: setShowMerge(true)} style={{ background: 'none', b... | Type: button
+File: LeadDetails.jsx | Text: openCompose('WhatsApp')} style={{ flex: 1, height:... | Type: button
+File: LeadDetails.jsx | Text: openCompose('SMS')} style={{ flex: 1, height: 44, ... | Type: button
+File: LeadDetails.jsx | Text: openCompose('Email')} style={{ flex: 1, height: 44... | Type: button
+File: LeadDetails.jsx | Text: <span style={{ color: '#5A5A5A', fontSize: 16 }}>L... | Type: button
+File: LeadDetails.jsx | Text: Generate Asset Now | Type: button
+File: LeadDetails.jsx | Text: openCompose('WhatsApp', true)} style={{ height: 36... | Type: button
+File: Leads.jsx | Text: setStageFilter(s)} style={{ padding: '8px 18px', b... | Type: button
+File: Leads.jsx | Text: setIntentFilter(k)} style={{ padding: '8px 18px', ... | Type: button
+File: Leads.jsx | Text: { try { const token = localStorage.getItem('voicei... | Type: button
+File: Leads.jsx | Text: { setSelected(null); setShowModal(true); }} classN... | Type: button
+File: Leads.jsx | Text: { e.stopPropagation(); navigate(`/leads/${lead.id}... | Type: button
+File: Leads.jsx | Text: { setSelected(null); setShowModal(true); }} style=... | Type: button
+File: LeadSourceHub.jsx | Text: {source.status === 'connected' ? 'Configure' : 'Co... | Type: button
+File: LeadSourceHub.jsx | Text: ⚙️ | Type: button
+File: LeadSourceHub.jsx | Text: View Documentation → | Type: button
+File: MobilePipeline.jsx | Text: Filter | Type: button
+File: MobilePipeline.jsx | Text: setExpanded(p => ({ ...p, [stage]: true }))} style... | Type: button
+File: MobilePipeline.jsx | Text: setShowClosed(p => !p)} style={{ background: 'none... | Type: button
+File: MobilePipeline.jsx | Text: setShowModal(true)} aria-label="Add new contact" s... | Type: button
+File: NotificationPanel.jsx | Text: setFilter(f)} style={{ padding: '6px 16px', border... | Type: button
+File: NotificationPanel.jsx | Text: { navigate('/settings'); onClose(); }} style={{ ba... | Type: button
+File: OrgSettings.jsx | Text: handleTab(tab)} style={{ padding: '12px 20px', bor... | Type: button
+File: OrgSettings.jsx | Text: navigate('/team-mgmt')} style={{ background: 'none... | Type: button
+File: OrgSettings.jsx | Text: setAddingTeam(false)} style={{ padding: '10px 16px... | Type: button
+File: OrgSettings.jsx | Text: setAddingTeam(true)} style={{ padding: '10px 20px'... | Type: button
+File: RepPulse.jsx | Text: setPeriod(p.id)} style={{ padding: '10px 20px', bo... | Type: button
+File: Settings.jsx | Text: setTab(t.id)} className={`tab ${tab === t.id ? 'ac... | Type: button
+File: Settings.jsx | Text: setTheme(t.id)} style={{ flex: 1, padding: '10px 1... | Type: button
+File: Settings.jsx | Text: Configure | Type: button
+File: Settings.jsx | Text: Upload Logo | Type: button
+File: Settings.jsx | Text: Change Password | Type: button
+File: Settings.jsx | Text: updateProfile({ is2FAEnabled: !profile.is2FAEnable... | Type: button
+File: TeamManagement.jsx | Text: setShowAddTeam(true)}>+ Create New Team | Type: button
+File: TeamManagement.jsx | Text: setShowAddTeam(false)}>Cancel | Type: button
+File: WelcomeWizard.jsx | Text: setStep(step - 1)} className="btn-secondary" style... | Type: button
+
+--- All Buttons with onClick ---
+File: AddContactModal.jsx | Text: &times; | onClick: onClose
+File: AddDealModal.jsx | Text: &times; | onClick: onClose
+File: AIAssistant.jsx | Text: <Send size={16} /> | onClick: handleSend
+File: ComposeModal.jsx | Text: &times; | onClick: onClose
+File: ConfirmModal.jsx | Text: {cancelText} | onClick: onClose
+File: DestructiveModal.jsx | Text: Cancel | onClick: onClose
+File: DestructiveModal.jsx | Text: {confirmLabel} | onClick: onConfirm
+File: DestructiveModal.jsx | Text: Cancel | onClick: onClose
+File: DestructiveModal.jsx | Text: {confirmLabel || 'Permanently delete'} | onClick: onConfirm
+File: DestructiveModal.jsx | Text: Cancel | onClick: onClose
+File: EmptyState.jsx | Text: {ctaLabel || 'Connect channels'} | onClick: onCta
+File: EmptyState.jsx | Text: {secondaryLabel || 'Learn more'} | onClick: onSecondary
+File: EmptyState.jsx | Text: {ctaLabel || 'Create a deal'} | onClick: onCta
+File: EmptyState.jsx | Text: {secondaryLabel || 'Watch a 60-sec demo →'} | onClick: onSecondary
+File: EmptyState.jsx | Text: {ctaLabel || 'Invite your team'} | onClick: onCta
+File: EmptyState.jsx | Text: {secondaryLabel || 'View sample data →'} | onClick: onSecondary
+File: FoundingWelcome.jsx | Text: Let's get started → | onClick: handleStart
+File: FoundingWelcome.jsx | Text: or close to explore | onClick: handleClose
+File: Header.jsx | Text: Sign Out | onClick: logout
+File: MergeContactModal.jsx | Text: Cancel | onClick: onClose
+File: MergeContactModal.jsx | Text: Confirm Merge | onClick: onClose
+File: NotificationPanel.jsx | Text: × | onClick: onClose
+File: OnboardingTour.jsx | Text: <X size={24} /> | onClick: handleComplete
+File: OnboardingTour.jsx | Text: {step === steps.length - 1 ? 'Start Selling' : 'Ne... | onClick: handleNext
+File: ReassignModal.jsx | Text: Cancel | onClick: onClose
+File: ReassignModal.jsx | Text: Reassign | onClick: onClose
+File: Sidebar.jsx | Text: { e.currentTarget.style.color = '#EF4444'; e.curre... | onClick: logout
+File: VoiceNotePlayer.jsx | Text: {playing ? '⏸' : '▶'} | onClick: togglePlay
+File: ToastContext.jsx | Text: {toast.action.label} | onClick: toast.action.onClick
+File: ToastContext.jsx | Text: ✕ | onClick: onDismiss
+File: Calendar.jsx | Text: ← | onClick: handlePrev
+File: Calendar.jsx | Text: → | onClick: handleNext
+File: Calendar.jsx | Text: Today | onClick: handleToday
+File: Calendar.jsx | Text: Confirm Reschedule → | onClick: handleReschedule
+File: ComposeSheet.jsx | Text: × | onClick: onClose
+File: ComposeSheet.jsx | Text: Regenerate | onClick: regenerate
+File: ComposeSheet.jsx | Text: Send | onClick: send
+File: ComposeSheet.jsx | Text: Send via {channel} | onClick: send
+File: GlobalInbox.jsx | Text: e.currentTarget.style.transform = 'translateY(-2px... | onClick: send
+File: LeadDetails.jsx | Text: Regenerate | onClick: fetchSummary
+File: Login.jsx | Text: <svg width="20" height="20" viewBox="0 0 24 24"> <... | onClick: handleGoogleLogin
+File: NotificationPanel.jsx | Text: × | onClick: onClose
+File: OrgSettings.jsx | Text: Save | onClick: saveOrgName
+File: OrgSettings.jsx | Text: Save | onClick: addTeam
+File: Settings.jsx | Text: Save Changes | onClick: save
+File: Settings.jsx | Text: Sign Out of DaleIQ | onClick: logout
+File: Settings.jsx | Text: 🚪 Sign Out of All Devices | onClick: logout
+File: TeamManagement.jsx | Text: Save Team | onClick: handleCreateTeam
+File: WelcomeWizard.jsx | Text: {step === 3 ? "Launch My Workspace" : "Next Step"} | onClick: next

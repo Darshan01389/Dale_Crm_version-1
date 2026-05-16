@@ -7,28 +7,46 @@ from app.ml.sentiment_service import SentimentResult
 from app.schemas.lead import LeadCreate
 
 
-def _llm_request(body: dict) -> str:
-    is_groq = settings.USE_GROQ_FOR_ALL and (settings.GROQ_API_KEY or "").strip()
-    key = (settings.GROQ_API_KEY if is_groq else settings.OPENAI_API_KEY or "").strip()
-    
-    if not key:
-        raise ValueError("AI API key is not configured")
+_key_index = 0
 
-    url = "https://api.groq.com/openai/v1/chat/completions" if is_groq else "https://api.openai.com/v1/chat/completions"
+def _llm_request(body: dict, model_override: str = None) -> str:
+    global _key_index
+    if not settings.USE_OLLAMA_FOR_ALL:
+        raise ValueError("Ollama is not enabled")
 
-    req = urllib.request.Request(
-        url,
-        data=json.dumps(body).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {key}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
+    # Use override, then body, then default
+    model = model_override or body.get("model") or settings.OLLAMA_MODEL
+    body["model"] = model
 
-    with urllib.request.urlopen(req, timeout=45) as resp:
-        payload = json.loads(resp.read().decode("utf-8"))
-    return payload["choices"][0]["message"]["content"].strip()
+    keys = settings.nvidia_keys
+    url = f"{settings.OLLAMA_BASE_URL.rstrip('/')}/v1/chat/completions"
+
+    # Try each key until one works
+    last_error = None
+    for _ in range(len(keys) or 1):
+        headers = {"Content-Type": "application/json"}
+        if keys:
+            current_key = keys[_key_index % len(keys)]
+            headers["Authorization"] = f"Bearer {current_key}"
+            _key_index += 1
+
+        try:
+            req = urllib.request.Request(
+                url,
+                data=json.dumps(body).encode("utf-8"),
+                headers=headers,
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=45) as resp:
+                payload = json.loads(resp.read().decode("utf-8"))
+            return payload["choices"][0]["message"]["content"].strip()
+        except Exception as e:
+            last_error = e
+            continue
+            
+    if last_error:
+        raise last_error
+    return ""
 
 
 def generate_whatsapp_message(
@@ -36,8 +54,7 @@ def generate_whatsapp_message(
     sentiment: SentimentResult,
     purpose: str | None = None,
 ) -> str:
-    is_groq = settings.USE_GROQ_FOR_ALL and (settings.GROQ_API_KEY or "").strip()
-    if not is_groq and not (settings.OPENAI_API_KEY or "").strip():
+    if not settings.USE_OLLAMA_FOR_ALL:
         greeting = lead.title or "Hello"
         return (
             f"Hi {greeting},\n\nI noticed your interest from {lead.source or 'your recent inquiry'}. "
@@ -66,7 +83,7 @@ def generate_whatsapp_message(
     }
 
     body = {
-        "model": settings.GROQ_MODEL if is_groq else settings.OPENAI_MODEL,
+        "model": settings.CHAT_MODEL,
         "temperature": 0.7,
         "messages": [
             {"role": "system", "content": prompt},
@@ -75,7 +92,7 @@ def generate_whatsapp_message(
     }
 
     try:
-        return _llm_request(body)
+        return _llm_request(body, model_override=settings.CHAT_MODEL)
     except (urllib.error.URLError, urllib.error.HTTPError, ValueError, KeyError):
         return (
             f"Hi {lead.title or 'there'},\n\nThanks for reaching out through {lead.source_platform or lead.source or 'your channel'}. "
@@ -83,8 +100,7 @@ def generate_whatsapp_message(
         )
 
 def generate_ai_summary(lead, activities, voice_recordings) -> str:
-    is_groq = settings.USE_GROQ_FOR_ALL and (settings.GROQ_API_KEY or "").strip()
-    if not is_groq and not (settings.OPENAI_API_KEY or "").strip():
+    if not settings.USE_OLLAMA_FOR_ALL:
         return "Deal is progressing. Suggested next step: Follow up with prospect."
 
     prompt = (
@@ -107,7 +123,7 @@ def generate_ai_summary(lead, activities, voice_recordings) -> str:
     }
 
     body = {
-        "model": settings.GROQ_MODEL if is_groq else settings.OPENAI_MODEL,
+        "model": settings.STRATEGY_MODEL,
         "temperature": 0.5,
         "messages": [
             {"role": "system", "content": prompt},
@@ -116,21 +132,28 @@ def generate_ai_summary(lead, activities, voice_recordings) -> str:
     }
 
     try:
-        return _llm_request(body)
+        return _llm_request(body, model_override=settings.STRATEGY_MODEL)
     except Exception:
         return "Deal is progressing. Suggested next step: Follow up with prospect."
 
-def ai_suggest_reply(lead, activities, voice_recordings) -> str:
-    is_groq = settings.USE_GROQ_FOR_ALL and (settings.GROQ_API_KEY or "").strip()
-    if not is_groq and not (settings.OPENAI_API_KEY or "").strip():
-        return f"Hi {lead.title},\n\nFollowing up on our recent conversation. How would you like to proceed?"
+def ai_suggest_reply(lead, activities, voice_recordings, channel="whatsapp") -> dict:
+    if not settings.USE_OLLAMA_FOR_ALL:
+        res = {"draft": f"Hi {lead.title},\n\nFollowing up on our recent conversation via {channel}. How would you like to proceed?"}
+        if channel == "email":
+            res["subject"] = f"Re: Next steps for {lead.title}"
+        return res
 
     prompt = (
-        "You are an expert sales assistant. Write a short, empathetic, and highly personalized "
-        "WhatsApp/Email message to the prospect. Use the provided recent activity and call transcripts "
+        f"You are an expert sales assistant. Write a short, empathetic, and highly personalized "
+        f"{channel.upper()} message to the prospect. Use the provided recent activity and call transcripts "
         "to reference their specific needs or objections. Do not include placeholders like [Your Name]. "
         "Keep it under 3 sentences and end with a clear, low-friction question."
     )
+    
+    if channel == "email":
+        prompt += "\n\nCRITICAL: Return your response as a JSON object with two keys: 'subject' (a short, catchy email subject) and 'draft' (the email body). Do not include any other text."
+    else:
+        prompt += "\n\nReturn only the plain message text, no markdown or JSON."
 
     activities_text = "\n".join([f"- {a.activity_type} at {a.occurred_at}: {a.body or a.subject}" for a in activities[:5]])
     voice_text = "\n".join([f"- Call at {v.occurred_at}: {v.summary} (Sentiment: {v.sentiment_label})" for v in voice_recordings[:3]])
@@ -140,11 +163,12 @@ def ai_suggest_reply(lead, activities, voice_recordings) -> str:
         "lead_company": lead.company,
         "intent_level": getattr(lead, "intent_level", "Unknown"),
         "recent_activities": activities_text,
-        "recent_calls": voice_text
+        "recent_calls": voice_text,
+        "channel": channel
     }
 
     body = {
-        "model": settings.GROQ_MODEL if is_groq else settings.OPENAI_MODEL,
+        "model": settings.STRATEGY_MODEL,
         "temperature": 0.7,
         "messages": [
             {"role": "system", "content": prompt},
@@ -153,6 +177,21 @@ def ai_suggest_reply(lead, activities, voice_recordings) -> str:
     }
 
     try:
-        return _llm_request(body)
+        raw_res = _llm_request(body, model_override=settings.STRATEGY_MODEL)
+        if channel == "email":
+            # Try to parse JSON from LLM
+            try:
+                # Basic cleanup if LLM added backticks
+                if "```json" in raw_res:
+                    raw_res = raw_res.split("```json")[1].split("```")[0].strip()
+                elif "```" in raw_res:
+                    raw_res = raw_res.split("```")[1].split("```")[0].strip()
+                
+                parsed = json.loads(raw_res)
+                return {"draft": parsed.get("draft", ""), "subject": parsed.get("subject", "Following up")}
+            except:
+                return {"draft": raw_res, "subject": f"Re: Next steps for {lead.title}"}
+        return {"draft": raw_res}
     except Exception:
-        return f"Hi {lead.title},\n\nJust checking in on our last conversation. Let me know if you have any questions!"
+        fallback = f"Hi {lead.title},\n\nJust checking in on our last conversation. Let me know if you have any questions!"
+        return {"draft": fallback, "subject": "Checking in"} if channel == "email" else {"draft": fallback}

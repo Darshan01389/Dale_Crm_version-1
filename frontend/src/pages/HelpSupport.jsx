@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 
 const CARDS = [
-  { icon: '💬', name: 'Chat with Support',   desc: 'Avg response: 3 minutes',           action: 'OPEN CHAT',  href: 'mailto:support@daleiq.com' },
-  { icon: '📚', name: 'Knowledge Base',       desc: 'About Deal IQ, Community forums, and 120+ video tutorials',    action: 'BROWSE',     href: null, internal: '/community' },
-  { icon: '🚀', name: 'Onboarding Coach',     desc: 'Re-run setup walkthrough',          action: 'RESTART',    href: null, onboard: true },
-  { icon: '✉️', name: 'Email Support',        desc: 'support@daleiq.com · 1-day response', action: 'EMAIL',   href: 'mailto:support@daleiq.com' },
-  { icon: '🐛', name: 'Report a Bug',         desc: 'Help us fix it fast',               action: 'REPORT',     href: 'mailto:bugs@daleiq.com' },
-  { icon: '💡', name: 'Suggest a Feature',    desc: 'Vote on the roadmap',               action: 'SUBMIT',     href: 'mailto:feedback@daleiq.com' },
+  { icon: '💬', name: 'Chat with Support', desc: 'Avg response: 3 minutes', action: 'OPEN CHAT', href: 'mailto:supportaicrm@gmail.com' },
+  { icon: '📚', name: 'Knowledge Base', desc: 'About Dale IQ, Community forums, and 120+ video tutorials', action: 'BROWSE', href: null, internal: '/community' },
+  { icon: '🚀', name: 'Onboarding Coach', desc: 'Re-run setup walkthrough', action: 'RESTART', href: null, onboard: true },
+  { icon: '✉️', name: 'Email Support', desc: 'supportaicrm@gmail.com · 1-day response', action: 'EMAIL', href: 'mailto:supportaicrm@gmail.com' },
+  { icon: '🐛', name: 'Report a Bug', desc: 'Help us fix it fast', action: 'REPORT', href: 'mailto:bugsaicrm@gmail.com' },
+  { icon: '💡', name: 'Suggest a Feature', desc: 'Vote on the roadmap', action: 'SUBMIT', href: 'mailto:feedbackaicrm@gmail.com' },
 ];
 
 const FAQS = [
@@ -48,8 +48,8 @@ const HelpSupport = () => {
   if (showChatbot) {
     return (
       <div style={{ height: '100%', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
-        <iframe 
-          src="http://localhost:8002" 
+        <iframe
+          src="/api/chatbot/ui"
           style={{ width: '100%', height: '100%', border: 'none' }}
           title="DaleIQ Assistant"
         />
@@ -99,12 +99,12 @@ const HelpSupport = () => {
         {/* 3×2 card grid */}
         <div className="help-grid">
           {CARDS.map(card => (
-            <div key={card.name} 
+            <div key={card.name}
               className="hover-lift"
-              style={{ 
-                display: 'flex', flexDirection: 'column', padding: 24, 
-                background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', 
-                borderRadius: 16, boxShadow: 'var(--shadow-sm)', cursor: 'pointer', 
+              style={{
+                display: 'flex', flexDirection: 'column', padding: 24,
+                background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)',
+                borderRadius: 16, boxShadow: 'var(--shadow-sm)', cursor: 'pointer',
                 transition: 'all 0.2s ease', minHeight: 200
               }}
               onClick={() => handleCard(card)}>

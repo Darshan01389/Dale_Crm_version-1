@@ -54,6 +54,11 @@ def create_activity(db: Session, owner_id: UUID, data: ActivityCreate) -> Activi
     db.add(row)
     db.commit()
     db.refresh(row)
+    
+    # Auto-complete daily tasks
+    from app.services.task_service import TaskService
+    TaskService.complete_task_by_activity(db, owner_id, data.lead_id)
+    
     return row
 
 

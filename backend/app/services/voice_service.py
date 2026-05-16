@@ -1,52 +1,26 @@
 import os
+import json
+import urllib.request
+import urllib.error
 from typing import Optional, Dict, Any
-import openai
 from app.core.config import settings
 
 class VoiceService:
     def __init__(self):
-        self.openai_key = settings.OPENAI_API_KEY
-        self.groq_key = settings.GROQ_API_KEY
+        self.ollama_url = f"{settings.OLLAMA_BASE_URL.rstrip('/')}/v1/chat/completions" if settings.USE_OLLAMA_FOR_ALL else None
         
-        if self.openai_key:
-            self.openai_client = openai.OpenAI(api_key=self.openai_key)
-        else:
-            self.openai_client = None
-            
-        if self.groq_key:
-            from groq import Groq
-            self.groq_client = Groq(api_key=self.groq_key)
-        else:
-            self.groq_client = None
-
     async def transcribe_audio(self, file_path: str) -> Optional[str]:
         """
-        Uses OpenAI Whisper to transcribe audio files.
+        Uses OpenAI Whisper to transcribe audio files. (Disabled for Ollama)
         """
-        if not self.openai_client:
-            print("Voice AI: OpenAI client not configured. Skipping transcription.")
-            return "Transcription skipped (No API Key)"
-
-        try:
-            with open(file_path, "rb") as audio_file:
-                transcript = self.openai_client.audio.transcriptions.create(
-                    model="whisper-1", 
-                    file=audio_file,
-                    response_format="text"
-                )
-                return transcript
-        except Exception as e:
-            print(f"Voice AI: Error during transcription: {e}")
-            return None
+        print("Voice AI: Transcription requires OpenAI/Whisper. Skipping transcription.")
+        return "Transcription skipped (Using Ollama locally)"
 
     async def analyze_intelligence(self, text: str) -> Dict[str, Any]:
         """
         Uses LLM to extract insights: sentiment, tone, buying signals.
         """
-        is_groq = settings.USE_GROQ_FOR_ALL and self.groq_client
-        client = self.groq_client if is_groq else self.openai_client
-        
-        if not client or not text:
+        if not self.ollama_url or not text:
             return {}
 
         try:
@@ -63,25 +37,35 @@ class VoiceService:
             Respond in JSON format with keys: sentiment, tone, signals, summary.
             """
             
-            model = settings.GROQ_MODEL if is_groq else "gpt-4-turbo-preview"
+            body = {
+                "model": settings.OLLAMA_MODEL,
+                "temperature": 0.2,
+                "response_format": {"type": "json_object"},
+                "messages": [
+                    {"role": "system", "content": "You are a sales intelligence analyzer."},
+                    {"role": "user", "content": prompt}
+                ]
+            }
             
-            if is_groq:
-                response = client.chat.completions.create(
-                    model=model,
-                    messages=[{"role": "system", "content": "You are a sales intelligence analyzer."},
-                              {"role": "user", "content": prompt}],
-                    response_format={"type": "json_object"}
-                )
-            else:
-                response = client.chat.completions.create(
-                    model=model,
-                    messages=[{"role": "system", "content": "You are a sales intelligence analyzer."},
-                              {"role": "user", "content": prompt}],
-                    response_format={"type": "json_object"}
-                )
+            headers = {
+                "Content-Type": "application/json",
+            }
+            if settings.NVIDIA_API_KEY:
+                headers["Authorization"] = f"Bearer {settings.NVIDIA_API_KEY}"
+
+            req = urllib.request.Request(
+                self.ollama_url,
+                data=json.dumps(body).encode("utf-8"),
+                headers=headers,
+                method="POST",
+            )
             
-            import json
-            return json.loads(response.choices[0].message.content)
+            with urllib.request.urlopen(req, timeout=45) as resp:
+                payload = json.loads(resp.read().decode("utf-8"))
+            
+            content = payload["choices"][0]["message"]["content"]
+            
+            return json.loads(content)
         except Exception as e:
             print(f"Voice AI: Error during intelligence analysis: {e}")
             return {}

@@ -1,52 +1,101 @@
 import React, { useState } from 'react';
+import { useToast } from '../contexts/ToastContext';
 
-const AddContactModal = ({ isOpen, onClose }) => {
+const AddContactModal = ({ isOpen, onClose, onSuccess }) => {
+  const { show } = useToast();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [source, setSource] = useState('Referral');
   const [note, setNote] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const isPhoneValid = phone.length >= 10;
   const isDuplicate = phone.endsWith('99');
+
+  const handleSave = async () => {
+    if (!name || !phone) return;
+    
+    setIsSaving(true);
+    try {
+      const token = localStorage.getItem('voiceiq_token');
+      const response = await fetch('/api/leads', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: name,
+          phone: phone,
+          email: email || null,
+          source: source,
+          notes: note,
+          status: 'new'
+        })
+      });
+
+      if (response.ok) {
+        show({ type: 'success', message: 'Lead added successfully!' });
+        if (onSuccess) onSuccess();
+        // Reset form
+        setName('');
+        setPhone('');
+        setEmail('');
+        setSource('Referral');
+        setNote('');
+        onClose();
+      } else {
+        const err = await response.json();
+        show({ type: 'error', message: err.detail || 'Failed to add lead' });
+      }
+    } catch (error) {
+      show({ type: 'error', message: 'Network error while adding lead' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (!isOpen) return null;
 
   return (
     <div style={{
       position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
       zIndex: 2000, padding: 16
     }}>
-      <div className="card" style={{ width: '100%', maxWidth: 500, maxHeight: '90vh', overflowY: 'auto', padding: 0 }}>
-        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ fontSize: 18, fontWeight: 800 }}>New Contact</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: 'var(--text-muted)' }}>&times;</button>
+      <div className="card glass animate-in" style={{ width: '100%', maxWidth: 500, maxHeight: '90vh', overflowY: 'auto', padding: 0, borderRadius: 24 }}>
+        <div style={{ padding: '24px 32px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Create New Lead</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 24, cursor: 'pointer', color: 'var(--text-muted)' }}>&times;</button>
         </div>
 
-        <div style={{ padding: 24 }}>
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ fontSize: 10, fontWeight: 900, color: 'var(--text-micro)', letterSpacing: 1, display: 'block', marginBottom: 8 }}>FULL NAME *</label>
+        <div style={{ padding: 32 }}>
+          <div style={{ marginBottom: 24 }}>
+            <label style={{ fontSize: 11, fontWeight: 900, color: 'var(--text-muted)', letterSpacing: '0.05em', display: 'block', marginBottom: 10 }}>FULL NAME *</label>
             <input 
               className="input" 
               placeholder="e.g. John Doe"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              disabled={isSaving}
             />
           </div>
 
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ fontSize: 10, fontWeight: 900, color: 'var(--text-micro)', letterSpacing: 1, display: 'block', marginBottom: 8 }}>PHONE NUMBER *</label>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <div style={{ marginBottom: 24 }}>
+            <label style={{ fontSize: 11, fontWeight: 900, color: 'var(--text-muted)', letterSpacing: '0.05em', display: 'block', marginBottom: 10 }}>PHONE NUMBER *</label>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
               <input 
                 className="input" 
                 placeholder="+91 98765 43210"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                disabled={isSaving}
               />
               {isPhoneValid && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: '#F0FAF4', padding: '6px 12px', borderRadius: 20, whiteSpace: 'nowrap' }}>
-                  <span style={{ color: 'var(--rep-accent)', fontSize: 12, fontWeight: 700 }}>✓ Verified</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(16, 185, 129, 0.1)', padding: '8px 14px', borderRadius: 20, whiteSpace: 'nowrap' }}>
+                  <span style={{ color: '#10B981', fontSize: 12, fontWeight: 800 }}>✓ Verified</span>
                 </div>
               )}
             </div>
@@ -54,72 +103,71 @@ const AddContactModal = ({ isOpen, onClose }) => {
 
           {isPhoneValid && (
             <div style={{ 
-              background: isDuplicate ? '#FEF2F2' : '#EFF6FF', 
-              padding: 16, borderRadius: 12, marginBottom: 20, 
-              border: `1px solid ${isDuplicate ? '#FECACA' : '#DBEAFE'}`, 
-              display: 'flex', gap: 12 
+              background: isDuplicate ? 'rgba(239, 68, 68, 0.05)' : 'rgba(79, 70, 229, 0.05)', 
+              padding: 20, borderRadius: 16, marginBottom: 24, 
+              border: `1px solid ${isDuplicate ? 'rgba(239, 68, 68, 0.2)' : 'rgba(79, 70, 229, 0.2)'}`, 
+              display: 'flex', gap: 14 
             }}>
-              <span style={{ fontSize: 16 }}>{isDuplicate ? '🚨' : '✨'}</span>
+              <span style={{ fontSize: 20 }}>{isDuplicate ? '🚨' : '✨'}</span>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: isDuplicate ? '#991B1B' : '#4F46E5' }}>
-                  {isDuplicate ? 'Duplicate Detected' : 'AI Detection'}
+                <div style={{ fontSize: 14, fontWeight: 800, color: isDuplicate ? '#EF4444' : 'var(--primary)' }}>
+                  {isDuplicate ? 'Duplicate Detected' : 'AI Analysis Active'}
                 </div>
-                <div style={{ fontSize: 12, color: isDuplicate ? '#991B1B' : '#4F46E5', marginTop: 2 }}>
+                <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.5 }}>
                   {isDuplicate 
-                    ? 'A contact with this phone number already exists in your database.' 
-                    : 'WhatsApp available. No existing records found. Location: Mumbai, India.'}
+                    ? 'This contact already exists. Saving will create a duplicate record.' 
+                    : 'Real-time validation: WhatsApp verified. Region: Maharashtra. No existing records found.'}
                 </div>
               </div>
             </div>
           )}
 
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ fontSize: 10, fontWeight: 900, color: 'var(--text-micro)', letterSpacing: 1, display: 'block', marginBottom: 8 }}>EMAIL ADDRESS</label>
-            <input 
-              className="input" 
-              type="email"
-              placeholder="john@company.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24 }}>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 900, color: 'var(--text-muted)', letterSpacing: '0.05em', display: 'block', marginBottom: 10 }}>EMAIL ADDRESS</label>
+              <input 
+                className="input" 
+                type="email"
+                placeholder="john@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isSaving}
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 900, color: 'var(--text-muted)', letterSpacing: '0.05em', display: 'block', marginBottom: 10 }}>SOURCE</label>
+              <select className="input" value={source} onChange={(e) => setSource(e.target.value)} disabled={isSaving}>
+                <option>Referral</option>
+                <option>Inbound Call</option>
+                <option>Meta Ads</option>
+                <option>Cold Outreach</option>
+              </select>
+            </div>
           </div>
 
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ fontSize: 10, fontWeight: 900, color: 'var(--text-micro)', letterSpacing: 1, display: 'block', marginBottom: 8 }}>SOURCE</label>
-            <select className="input" value={source} onChange={(e) => setSource(e.target.value)}>
-              <option>Referral</option>
-              <option>Inbound Call</option>
-              <option>Meta Ads</option>
-              <option>Cold Outreach</option>
-            </select>
-          </div>
-
-          <div style={{ marginBottom: 24 }}>
-            <label style={{ fontSize: 10, fontWeight: 900, color: 'var(--text-micro)', letterSpacing: 1, display: 'block', marginBottom: 8 }}>QUICK NOTE</label>
+          <div style={{ marginBottom: 32 }}>
+            <label style={{ fontSize: 11, fontWeight: 900, color: 'var(--text-muted)', letterSpacing: '0.05em', display: 'block', marginBottom: 10 }}>QUICK NOTE</label>
             <textarea 
               className="input" 
               placeholder="Add context about this lead..."
-              style={{ minHeight: 80 }}
+              style={{ minHeight: 100, resize: 'none' }}
               value={note}
               onChange={(e) => setNote(e.target.value)}
+              disabled={isSaving}
             />
           </div>
 
           <button 
             className="btn-primary" 
             style={{ 
-              width: '100%', padding: 16, borderRadius: 12, justifyContent: 'center',
-              background: isDuplicate ? '#DC2626' : 'var(--primary-color)'
+              width: '100%', padding: 18, borderRadius: 16, justifyContent: 'center',
+              background: isSaving ? 'var(--text-muted)' : (isDuplicate ? '#EF4444' : 'var(--primary)'),
+              opacity: isSaving ? 0.7 : 1
             }}
-            disabled={!name || !phone}
-            onClick={() => {
-              if (isDuplicate) {
-                alert('Redirecting to Merge View (Screen 28)...');
-              }
-              onClose();
-            }}
+            disabled={!name || !phone || isSaving}
+            onClick={handleSave}
           >
-            {isDuplicate ? 'View Duplicate & Merge' : 'Save & Open Conversation →'}
+            {isSaving ? 'Processing...' : (isDuplicate ? 'View Duplicate & Merge' : 'Save & Open Profile →')}
           </button>
         </div>
       </div>

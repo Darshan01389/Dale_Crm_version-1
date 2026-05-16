@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 from uuid import UUID
 
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from app.models.lead import Lead
@@ -82,8 +82,8 @@ def _apply_analysis_to_lead(lead: Lead, analysis: dict) -> None:
     lead.conversion_probability = analysis["conversion_probability"]
 
 
-def create_lead(db: Session, user: User, data: LeadCreate) -> Lead:
-    analysis = analyze_new_lead(data)
+def create_lead(db: Session, user: User, data: LeadCreate, background_tasks: BackgroundTasks = None) -> Lead:
+    # 1. Create lead immediately with basic data
     row = Lead(
         owner_id=user.id,
         title=data.title,
@@ -97,11 +97,100 @@ def create_lead(db: Session, user: User, data: LeadCreate) -> Lead:
         education=data.education,
         age=data.age,
     )
-    _apply_analysis_to_lead(row, analysis)
+    # Set default values for analysis fields to avoid null issues in UI
+    row.ai_score = None
+    row.ai_score_summary = "AI analysis in progress..."
+    
     db.add(row)
     db.commit()
     db.refresh(row)
+
+    # 2. Schedule heavy AI work in background (Analysis + WhatsApp)
+    if background_tasks:
+        background_tasks.add_task(_async_lead_ai_processing, row.id, user.id, data)
+    
     return row
+
+def _async_lead_ai_processing(lead_id: UUID, user_id: UUID, data: LeadCreate):
+    from app.core.database import SessionLocal
+    from app.models.lead import Lead
+    from app.models.user import User
+    
+    db = SessionLocal()
+    try:
+        lead = db.query(Lead).filter(Lead.id == lead_id).first()
+        user = db.query(User).filter(User.id == user_id).first()
+        if not lead or not user:
+            print(f"[Background Task] Error: Lead {lead_id} or User {user_id} not found.")
+            return
+            
+        print(f"[Background Task] Starting AI processing for lead: {lead.title}")
+        
+        # 1. Run heavy analysis (LLM Call)
+        try:
+            analysis = analyze_new_lead(data)
+            _apply_analysis_to_lead(lead, analysis)
+            db.commit()
+            print(f"[Background Task] AI Analysis complete for lead: {lead.title}")
+        except Exception as e:
+            print(f"[Background Task] AI Analysis failed: {e}")
+            # Continue to WhatsApp even if analysis fails
+        
+        # 2. Auto-send initial WhatsApp outreach (LLM + External API)
+        if lead.phone:
+            try:
+                _auto_send_initial_whatsapp(db, lead, user)
+                # _auto_send_initial_whatsapp now handles its own commit
+                print(f"[Background Task] Auto-WhatsApp complete for lead: {lead.title}")
+            except Exception as exc:
+                print(f"[Background Task] Auto-WhatsApp failed: {exc}")
+    except Exception as general_exc:
+        print(f"[Background Task] General failure: {general_exc}")
+    finally:
+        db.close()
+
+
+def _auto_send_initial_whatsapp(db: Session, lead: Lead, user: User) -> None:
+    """
+    Automatically generates and sends the first WhatsApp outreach message
+    to a new lead using Llama 3.1 (via openai_message_service).
+    Saves the message to the activities table so it appears on the interaction chart.
+    Works in both demo mode and live mode.
+    """
+    sentiment = SentimentResult(
+        label=lead.sentiment_label or "neutral",
+        compound=float(lead.sentiment_compound or 0.0),
+        pos=0.0,
+        neu=1.0,
+        neg=0.0,
+    )
+    message = generate_whatsapp_message(lead, sentiment, purpose="initial outreach")
+    result = send_whatsapp_message(lead, message)
+
+    lead.whatsapp_last_sent_at = datetime.utcnow()
+    lead.notification_attempts = 1
+    lead.whatsapp_status = "sent" if result.get("success") else "failed"
+    lead.whatsapp_delivery_status = result.get("delivery_status") or result.get("error")
+    lead.last_contacted_at = datetime.utcnow()
+    db.add(lead)
+
+    activity = Activity(
+        owner_id=user.id,
+        lead_id=lead.id,
+        activity_type="whatsapp",
+        subject="Initial WhatsApp Outreach (Auto-sent)",
+        body=message,
+        extra_metadata=json.dumps({
+            **result,
+            "direction": "outbound",
+            "auto_sent": True,
+            "company_number": user.whatsapp_number,
+            "lead_number": lead.phone,
+        }),
+    )
+    db.add(activity)
+    db.commit()
+    print(f"[WhatsApp Auto-Send] ✅ Sent and logged activity for lead '{lead.title}'")
 
 
 def ingest_lead(db: Session, user: User, ingest: LeadIngest) -> Lead:
@@ -125,6 +214,14 @@ def ingest_lead(db: Session, user: User, ingest: LeadIngest) -> Lead:
     db.add(row)
     db.commit()
     db.refresh(row)
+
+    # Auto-send initial WhatsApp for ingested leads from any platform
+    if row.phone:
+        try:
+            _auto_send_initial_whatsapp(db, row, user)
+        except Exception as exc:
+            print(f"[WhatsApp Auto-Send] Failed for ingested lead {row.id}: {exc}")
+
     return row
 
 

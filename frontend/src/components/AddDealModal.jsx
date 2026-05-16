@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useToast } from '../contexts/ToastContext';
 
 const AddDealModal = ({ isOpen, onClose, onSuccess }) => {
+  const { show } = useToast();
   const [stages, setStages] = useState([]);
   const [formData, setFormData] = useState({
     title: '',
@@ -48,7 +50,7 @@ const AddDealModal = ({ isOpen, onClose, onSuccess }) => {
       onClose();
     } catch (err) {
       console.error("Error creating deal:", err);
-      alert("Failed to create deal. Check console for details.");
+      show({ type: 'error', message: 'Failed to create deal. Please try again.' });
     } finally {
       setLoading(false);
     }
