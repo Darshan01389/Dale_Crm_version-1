@@ -18,17 +18,22 @@ const ComposeSheet = ({ isOpen, onClose, contact, initialChannel = 'WhatsApp', i
   const token = localStorage.getItem('voiceiq_token');
 
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      setChannel(initialChannel);
       setDeliveryStatus(null);
       setFreeText('');
       setEditing(false);
-      return;
     }
-    setChannel(initialChannel);
-    if (initialDraft) {
+  }, [isOpen, initialChannel]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (initialDraft && channel === initialChannel) {
       setDraft(initialDraft);
       return;
     }
+    
     // Fetch AI draft from the backend for any channel
     if (contact?.id) {
       setLoading(true);
@@ -50,7 +55,7 @@ const ComposeSheet = ({ isOpen, onClose, contact, initialChannel = 'WhatsApp', i
         })
         .finally(() => setLoading(false));
     }
-  }, [isOpen, contact?.id, channel]);
+  }, [isOpen, contact?.id, channel, initialDraft, initialChannel]);
 
   useEffect(() => {
     const handleKey = (e) => { if (e.key === 'Escape') onClose?.(); };

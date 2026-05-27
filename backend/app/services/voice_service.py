@@ -30,15 +30,16 @@ class VoiceService:
             2. Tone (e.g., Interested, Hesitant, Aggressive)
             3. Buying Signals (List any specific signals)
             4. Brief Summary (max 2 sentences)
+            5. Suggested Pipeline Stage: based on context, pick ONE of ["new", "contacted", "proposal", "negotiation", "won", "lost"]. If they want a price breakdown or proposal sent, choose "proposal". If they are discussing discounts, choose "negotiation". If they agreed to buy, "won". Otherwise default to "contacted" or "new".
 
             Transcript:
             {text}
 
-            Respond in JSON format with keys: sentiment, tone, signals, summary.
+            Respond in JSON format with keys: sentiment, tone, signals, summary, suggested_stage.
             """
             
             body = {
-                "model": settings.OLLAMA_MODEL,
+                "model": settings.CHAT_MODEL,
                 "temperature": 0.2,
                 "response_format": {"type": "json_object"},
                 "messages": [

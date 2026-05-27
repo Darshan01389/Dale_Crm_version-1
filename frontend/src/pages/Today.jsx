@@ -111,7 +111,7 @@ const Today = () => {
             <button onClick={reSyncAI} disabled={syncing} className="btn-secondary" style={{ fontSize: 12, padding: '10px 18px', borderRadius: 12, fontWeight: 700 }}>
               {syncing ? 'Syncing...' : '↻ Re-Sync AI'}
             </button>
-            {(profile?.role === 'Owner / Admin' || profile?.role === 'Team Lead') && (
+            {['Owner / Admin', 'Sales Admin', 'Team Lead', 'Manager', 'admin', 'admin/developers', 'Developer'].includes(profile?.role) && (
               <button onClick={triggerReassignment} className="btn-primary" style={{ fontSize: 12, padding: '10px 18px', borderRadius: 12, background: 'var(--text)', color: 'white', fontWeight: 700 }}>
                 ⚙️ Lead Check
               </button>

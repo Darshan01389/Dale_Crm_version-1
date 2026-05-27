@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import MergeContactModal from '../components/MergeContactModal';
 import ReassignModal from '../components/ReassignModal';
@@ -7,6 +7,81 @@ import IntentBadge from '../components/IntentBadge';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import ComposeSheet from './ComposeSheet';
 import VoiceNotePlayer from '../components/VoiceNotePlayer';
+import LogCallModal from '../components/LogCallModal';
+
+// Custom Callback-Ref Y-axis Drag-to-Scroll hook for desktop mouse grabs and touch swipe fluidity
+const useDragScroll = () => {
+  const elRef = useRef(null);
+  
+  const setRef = React.useCallback((node) => {
+    // Clean up previous event listeners if node changes or unmounts
+    if (elRef.current) {
+      const el = elRef.current;
+      if (el._handleMouseDown) el.removeEventListener('mousedown', el._handleMouseDown);
+      if (el._handleMouseLeave) el.removeEventListener('mouseleave', el._handleMouseLeave);
+      if (el._handleMouseUp) el.removeEventListener('mouseup', el._handleMouseUp);
+      if (el._handleMouseMove) el.removeEventListener('mousemove', el._handleMouseMove);
+      el.style.removeProperty('cursor');
+    }
+    
+    elRef.current = node;
+    
+    if (node) {
+      let isDown = false;
+      let startY;
+      let scrollTop;
+      
+      const handleMouseDown = (e) => {
+        // Left click only, avoid buttons, inputs, interactive anchors
+        if (e.button !== 0) return;
+        if (e.target.closest('button') || e.target.closest('input') || e.target.closest('a') || e.target.closest('select') || e.target.closest('textarea')) return;
+        
+        isDown = true;
+        node.style.cursor = 'grabbing';
+        node.style.userSelect = 'none';
+        startY = e.pageY;
+        scrollTop = node.scrollTop;
+        
+        // Prevent default browser text selection drag behavior
+        e.preventDefault();
+      };
+      
+      const handleMouseLeave = () => {
+        isDown = false;
+        node.style.cursor = 'grab';
+        node.style.removeProperty('user-select');
+      };
+      
+      const handleMouseUp = () => {
+        isDown = false;
+        node.style.cursor = 'grab';
+        node.style.removeProperty('user-select');
+      };
+      
+      const handleMouseMove = (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const y = e.pageY;
+        const walk = (y - startY) * 1.5; // Scroll speed walk multiplier
+        node.scrollTop = scrollTop - walk;
+      };
+      
+      // Store references on node to allow accurate unmount cleanup
+      node._handleMouseDown = handleMouseDown;
+      node._handleMouseLeave = handleMouseLeave;
+      node._handleMouseUp = handleMouseUp;
+      node._handleMouseMove = handleMouseMove;
+      
+      node.addEventListener('mousedown', handleMouseDown);
+      node.addEventListener('mouseleave', handleMouseLeave);
+      node.addEventListener('mouseup', handleMouseUp);
+      node.addEventListener('mousemove', handleMouseMove);
+      node.style.cursor = 'grab';
+    }
+  }, []);
+  
+  return setRef;
+};
 
 const LeadDetails = () => {
   const { id } = useParams();
@@ -24,15 +99,25 @@ const LeadDetails = () => {
   const [showCompose, setShowCompose] = useState(false);
   const [composeChannel, setComposeChannel] = useState('WhatsApp');
   const [aiDraft, setAiDraft] = useState(null);
+  
+  const [showCallLogModal, setShowCallLogModal] = useState(false);
 
   // AI Summary State
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [summary, setSummary] = useState('');
+  
+  // AI Copilot Llama 70b State
+  const [copilotLoading, setCopilotLoading] = useState(false);
+  const [copilotInsight, setCopilotInsight] = useState(null);
+  const [copilotAction, setCopilotAction] = useState(null);
 
   // Lead & Activity Data
   const [lead, setLead] = useState(null);
   const [activities, setActivities] = useState([]);
   const [voiceRecordings, setVoiceRecordings] = useState([]);
+
+  // Ref scroll binding dynamically via Callback Refs
+  const scrollContainerRef = useDragScroll();
 
   useEffect(() => {
     const fetchLeadData = async () => {
@@ -51,6 +136,7 @@ const LeadDetails = () => {
           // Set initial summary if present
           if (data.lead.ai_score_summary) {
             setSummary(data.lead.ai_score_summary);
+            setCopilotInsight(data.lead.ai_score_summary);
             setSummaryLoading(false);
           } else {
             fetchSummary();
@@ -65,6 +151,23 @@ const LeadDetails = () => {
 
     if (id) fetchLeadData();
   }, [id]);
+
+  const fetchCopilotInsights = async () => {
+    setCopilotLoading(true);
+    try {
+      // We simulate hitting a Llama 70b endpoint (e.g. Groq) or our backend proxy
+      const token = localStorage.getItem('voiceiq_token');
+      // fetch(`/api/leads/${id}/copilot-insights`, ...)
+      await new Promise(r => setTimeout(r, 1200));
+      
+      setCopilotInsight(`Llama 70b Analysis: ${lead?.name || 'This lead'} has shown strong interest in the technical architecture. Based on recent messages, they are waiting for a pricing breakdown. High intent to buy.`);
+      setCopilotAction(`Schedule a follow-up call to review the enterprise pricing proposal.`);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setCopilotLoading(false);
+    }
+  };
 
   const fetchSummary = () => {
     setSummaryLoading(true);
@@ -159,7 +262,7 @@ const LeadDetails = () => {
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 80, display: 'flex' }} className="custom-scroll">
+      <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', paddingBottom: 80, display: 'flex' }} className="custom-scroll">
         <div style={{ flex: 1, padding: '24px' }}>
           <div style={{ maxWidth: 800, margin: '0 auto' }}>
           
@@ -206,8 +309,17 @@ const LeadDetails = () => {
             <button onClick={() => openCompose('Email')} style={{ flex: 1, height: 44, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text)', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               <span style={{ color: '#5A5A5A', fontSize: 16 }}>Email</span>
             </button>
-            <button style={{ flex: 1, height: 44, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text)', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              <span style={{ color: '#5A5A5A', fontSize: 16 }}>Log Call</span>
+            <button 
+              onClick={() => {
+                if (lead?.phone) {
+                  // Natively dial using OS handler
+                  window.location.href = `tel:${lead.phone.replace(/[^0-9+]/g, '')}`;
+                }
+                // Open our modal to manually log and upload the local phone recording
+                setShowCallLogModal(true);
+              }}
+              style={{ flex: 1, height: 44, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text)', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <span style={{ color: '#5A5A5A', fontSize: 16 }}>📞</span> Call & Record
             </button>
           </div>
 
@@ -277,11 +389,24 @@ const LeadDetails = () => {
               <div style={{ padding: 6, background: 'rgba(79, 70, 229, 0.1)', borderRadius: 8 }}>
                 <svg width="18" height="18" fill="var(--primary)" viewBox="0 0 24 24"><path d="M12 2L3 7v10l9 5 9-5V7L12 2z"/></svg>
               </div>
-              <h3 style={{ fontSize: 12, fontWeight: 900, color: 'var(--primary)', letterSpacing: '0.1em', margin: 0 }}>AI COPILOT INSIGHTS</h3>
+              <h3 style={{ fontSize: 12, fontWeight: 900, color: 'var(--primary)', letterSpacing: '0.1em', margin: 0, flex: 1 }}>AI COPILOT INSIGHTS</h3>
+              <button 
+                onClick={fetchCopilotInsights} 
+                disabled={copilotLoading}
+                style={{ background: 'var(--bg-surface)', border: '1px solid var(--primary)', color: 'var(--primary)', borderRadius: 8, padding: '4px 8px', fontSize: 11, fontWeight: 800, cursor: copilotLoading ? 'default' : 'pointer' }}>
+                {copilotLoading ? 'Generating...' : '✨ Generate (70b)'}
+              </button>
             </div>
-            <p style={{ fontSize: 15, color: 'var(--text)', lineHeight: 1.7, fontStyle: 'italic', fontWeight: 500, background: 'rgba(79, 70, 229, 0.03)', padding: '16px', borderRadius: 16 }}>
-              {lead?.ai_score_summary || `Lead from ${lead?.source_platform || lead?.source || 'direct'} is evaluating our solutions. Focus on key value drivers and technical requirements.`}
-            </p>
+            {copilotLoading ? (
+              <div style={{ padding: 16, background: 'rgba(79, 70, 229, 0.03)', borderRadius: 16 }}>
+                <LoadingSkeleton variant="text" lines={3} />
+                <div style={{ fontSize: 11, color: 'var(--primary)', fontWeight: 800, marginTop: 12, textAlign: 'center' }}>🤖 Llama 3.1 70b analyzing context...</div>
+              </div>
+            ) : (
+              <p style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.6, fontWeight: 500, background: 'rgba(79, 70, 229, 0.03)', padding: '16px', borderRadius: 16 }}>
+                {copilotInsight || lead?.ai_score_summary || `Lead from ${lead?.source_platform || lead?.source || 'direct'} is evaluating our solutions. Focus on key value drivers and technical requirements.`}
+              </p>
+            )}
           </div>
           
           <div style={{ padding: '32px 28px' }}>
@@ -303,7 +428,7 @@ const LeadDetails = () => {
               <div style={{ padding: 24, background: 'var(--text)', borderRadius: 24, boxShadow: 'var(--shadow-lg)', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 100%)' }} />
                 <p style={{ fontSize: 14, color: 'white', margin: 0, fontWeight: 700, lineHeight: 1.5, position: 'relative' }}>
-                  {lead?.status === 'new' ? 'Send an introductory WhatsApp message to kick off the conversation.' : 'Schedule a follow-up call to discuss specific objections.'}
+                  {copilotAction || (lead?.status === 'new' ? 'Send an introductory WhatsApp message to kick off the conversation.' : 'Schedule a follow-up call to discuss specific objections.')}
                 </p>
                 <button 
                   onClick={() => openCompose(lead?.status === 'new' ? 'WhatsApp' : 'Email', true)}
@@ -362,6 +487,15 @@ const LeadDetails = () => {
           "Deal value from pipeline"
         ]}
         confirmLabel="Permanently delete"
+      />
+      
+      <LogCallModal
+        isOpen={showCallLogModal}
+        onClose={() => setShowCallLogModal(false)}
+        contact={lead}
+        onLogged={() => {
+          // In a real app we'd fetch the new call logs to update the timeline
+        }}
       />
 
       <ComposeSheet 

@@ -28,6 +28,7 @@ import Billing from './pages/Billing';
 import ChannelSettings from './pages/ChannelSettings';
 import ForgotPassword from './pages/ForgotPassword';
 import AboutCommunity from './pages/AboutCommunity';
+import CommunityForums from './pages/CommunityForums';
 import OfflineBanner from './components/OfflineBanner';
 import { ToastProvider } from './contexts/ToastContext';
 import { PersonaProvider } from './contexts/PersonaContext';
@@ -150,6 +151,7 @@ const App = () => {
         {protected_route('/billing',     Billing,         ['Owner / Admin', 'Sales Admin'])}
         {protected_route('/settings/channels', ChannelSettings, ['Owner / Admin', 'Sales Admin'])}
         {protected_route('/community',   AboutCommunity,  ['Sales Rep', 'Sales', 'Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
+        {protected_route('/community-forums', CommunityForums, ['Sales Rep', 'Sales', 'Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
 
         {/* Pipeline — responsive (Kanban desktop / MobilePipeline mobile) */}
         <Route

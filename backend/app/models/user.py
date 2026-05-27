@@ -33,6 +33,14 @@ class User(Base):
     current_active_leads = Column(Integer, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+    @property
+    def is_super_admin(self) -> bool:
+        return self.role in ["admin", "developer", "admin/developers"] or (self.role == "Owner / Admin" and self.company_id is None)
+
+    @property
+    def is_company_admin(self) -> bool:
+        return self.role in ["Owner / Admin", "Sales Admin"] and self.company_id is not None
+
     # This is just a helper so when you print a User object you see something useful
     def __repr__(self):
         return f"<User {self.email}>"

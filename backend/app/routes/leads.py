@@ -68,8 +68,20 @@ def request_manager(
     """
     lead = lead_service.get_lead(db, lead_id, current_user)
     
-    # Find a manager (Owner / Admin or Team Lead)
-    manager = db.query(User).filter(User.role.in_(["Owner / Admin", "Team Lead"]), User.is_active == True).first()
+    # Find a manager (Owner / Admin, Team Lead, Manager, or Sales Admin) in the same company first
+    manager = db.query(User).filter(
+        User.company_id == current_user.company_id,
+        User.role.in_(["Owner / Admin", "Team Lead", "Manager", "Sales Admin"]),
+        User.is_active == True
+    ).first()
+    
+    # Fallback to any active manager in the system
+    if not manager:
+        manager = db.query(User).filter(
+            User.role.in_(["Owner / Admin", "Team Lead", "Manager", "Sales Admin"]),
+            User.is_active == True
+        ).first()
+
     if not manager:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="No manager found to assign this request to.")
@@ -113,7 +125,7 @@ def distribute_leads_ai(
     current_user: User = Depends(get_current_user),
 ):
     """Distribute leads using AI matching and capacity management."""
-    if current_user.role not in ["Owner / Admin", "Team Lead"]:
+    if current_user.role not in ["Owner / Admin", "Team Lead", "Manager", "Sales Admin", "admin", "admin/developers"]:
         from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="Only managers can distribute leads.")
     return AIDistributionService.distribute_leads(db, [str(lid) for lid in body.lead_ids], str(current_user.id))

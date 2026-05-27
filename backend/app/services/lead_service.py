@@ -38,18 +38,29 @@ def _ensure_owner(lead: Lead | None, user: User) -> Lead:
             detail="Lead not found",
         )
     
-    # Owner / Admin can see everything
-    if user.role == "Owner / Admin":
+    # 1. Admin/Developers (global super-admins) can see everything
+    if user.role in ["admin", "developer", "admin/developers", "Developer"] or (user.role == "Owner / Admin" and user.company_id is None):
         return lead
         
-    # Team Lead can see their own + team's leads
-    if user.role == "Team Lead":
-        # Check if lead owner is in the same team
-        lead_owner = lead.owner
-        if lead_owner and lead_owner.team_id == user.team_id:
+    # 2. Company Accounts can see leads strictly belonging to their company
+    if user.role in ["Owner / Admin", "Sales Admin", "Company"] and user.company_id is not None:
+        if lead.company_id == user.company_id:
+            return lead
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not allowed to access leads outside your company",
+        )
+        
+    # 3. Managers/Team Leads can see their own + team's leads inside their company
+    if user.role in ["Team Lead", "Manager"]:
+        if user.team_id:
+            lead_owner = lead.owner
+            if lead_owner and lead_owner.team_id == user.team_id:
+                return lead
+        elif user.company_id and lead.company_id == user.company_id:
             return lead
 
-    # Sales Rep (and fallback) can only see their own
+    # 4. Salespersons (Sales Reps) can only see their own assigned leads
     if lead.owner_id != user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -233,17 +244,30 @@ def list_priority_leads(
 ) -> list[Lead]:
     q = db.query(Lead)
     
-    if user.role == "Sales Rep":
+    # 1. Salespersons (Sales Reps) can only list their own leads
+    if user.role in ["Sales Rep", "Sales"]:
         q = q.filter(Lead.owner_id == user.id)
-    elif user.role == "Team Lead":
-        # Get team member IDs
+        
+    # 2. Managers/Team Leads can see leads of their team members (or fall back to company scope)
+    elif user.role in ["Team Lead", "Manager"]:
         if user.team_id:
             member_ids = db.query(User.id).filter(User.team_id == user.team_id).all()
             member_ids = [m[0] for m in member_ids]
             q = q.filter(Lead.owner_id.in_(member_ids))
+        elif user.company_id:
+            company_user_ids = db.query(User.id).filter(User.company_id == user.company_id).all()
+            company_user_ids = [u[0] for u in company_user_ids]
+            q = q.filter(Lead.owner_id.in_(company_user_ids))
         else:
             q = q.filter(Lead.owner_id == user.id)
-    # Owner / Admin sees all
+            
+    # 3. Company Accounts can see leads strictly belonging to their company
+    elif user.role in ["Owner / Admin", "Sales Admin", "Company"] and user.company_id is not None:
+        company_user_ids = db.query(User.id).filter(User.company_id == user.company_id).all()
+        company_user_ids = [u[0] for u in company_user_ids]
+        q = q.filter(Lead.owner_id.in_(company_user_ids))
+        
+    # 4. Admin/Developers (global super-admins) see all leads without any filtering
 
     q = (
         q.order_by(Lead.ai_score.desc().nullslast(), Lead.notification_attempts.asc(), Lead.updated_at.desc())
@@ -340,16 +364,30 @@ def list_leads(
 ) -> list[Lead]:
     q = db.query(Lead)
     
-    if user.role == "Sales Rep":
-        q = q.filter(Lead.owner_id == user.id)
-    elif user.role == "Team Lead":
+    # 1. Salespersons (Sales Reps) can only list their officially assigned leads
+    if user.role in ["Sales Rep", "Sales"]:
+        q = q.filter(Lead.assigned_to == user.id)
+        
+    # 2. Managers/Team Leads can see leads of their team members (or fall back to company scope)
+    elif user.role in ["Team Lead", "Manager"]:
         if user.team_id:
             member_ids = db.query(User.id).filter(User.team_id == user.team_id).all()
             member_ids = [m[0] for m in member_ids]
             q = q.filter(Lead.owner_id.in_(member_ids))
+        elif user.company_id:
+            company_user_ids = db.query(User.id).filter(User.company_id == user.company_id).all()
+            company_user_ids = [u[0] for u in company_user_ids]
+            q = q.filter(Lead.owner_id.in_(company_user_ids))
         else:
             q = q.filter(Lead.owner_id == user.id)
-    # Owner / Admin sees all
+            
+    # 3. Company Accounts can see leads strictly belonging to their company
+    elif user.role in ["Owner / Admin", "Sales Admin", "Company"] and user.company_id is not None:
+        company_user_ids = db.query(User.id).filter(User.company_id == user.company_id).all()
+        company_user_ids = [u[0] for u in company_user_ids]
+        q = q.filter(Lead.owner_id.in_(company_user_ids))
+        
+    # 4. Admin/Developers (global super-admins) see all leads without any filtering
 
     q = (
         q.order_by(Lead.created_at.desc())

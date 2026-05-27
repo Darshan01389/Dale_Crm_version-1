@@ -51,6 +51,8 @@ class UserResponse(BaseModel):
     team_id: Optional[UUID] = None
     company_id: Optional[int] = None
     created_at: datetime
+    is_super_admin: Optional[bool] = False
+    is_company_admin: Optional[bool] = False
 
     # This tells Pydantic to read data from SQLAlchemy objects
     # (not just plain dictionaries)

@@ -166,7 +166,7 @@ const Leads = () => {
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600, marginRight: 12 }}>{filtered.length} leads found</span>
           
-          {(profile?.role === 'Owner / Admin' || profile?.role === 'Team Lead') && (
+          {['Owner / Admin', 'Sales Admin', 'Team Lead', 'Manager', 'admin', 'admin/developers', 'Developer'].includes(profile?.role) && (
             <button 
               onClick={async () => {
                 try {

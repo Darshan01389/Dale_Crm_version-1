@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 const CARDS = [
   { icon: '💬', name: 'Chat with Support', desc: 'Avg response: 3 minutes', action: 'OPEN CHAT', href: 'mailto:supportaicrm@gmail.com' },
@@ -19,11 +20,14 @@ const FAQS = [
 const HelpSupport = () => {
   const navigate = useNavigate();
   const { profile } = useUser();
+  const { theme } = useTheme();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('operational');
   const isFounder = profile?.is_founding_customer;
 
   const [showChatbot, setShowChatbot] = useState(false);
+  const [chatbotUrl, setChatbotUrl] = useState('');
+  const iframeRef = React.useRef(null);
 
   useEffect(() => {
     const handleMessage = (event) => {
@@ -35,6 +39,28 @@ const HelpSupport = () => {
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
+  // Set chatbot URL once when opening to avoid resetting conversation history
+  useEffect(() => {
+    if (showChatbot) {
+      const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#4F46E5';
+      setChatbotUrl(`/api/chatbot/ui?theme=${theme}&primary=${encodeURIComponent(primaryColor)}`);
+    } else {
+      setChatbotUrl('');
+    }
+  }, [showChatbot]);
+
+  // Dynamically synchronize theme changes to the running chatbot session without reload
+  useEffect(() => {
+    if (showChatbot && iframeRef.current) {
+      const primaryColor = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#4F46E5';
+      iframeRef.current.contentWindow?.postMessage({
+        type: 'theme-change',
+        theme,
+        primary: primaryColor
+      }, '*');
+    }
+  }, [theme, showChatbot]);
+
   const handleCard = (card) => {
     if (card.onboard) { navigate('/welcome'); return; }
     if (card.internal) { navigate(card.internal); return; }
@@ -45,11 +71,12 @@ const HelpSupport = () => {
     if (card.href) window.open(card.href, '_blank');
   };
 
-  if (showChatbot) {
+  if (showChatbot && chatbotUrl) {
     return (
       <div style={{ height: '100%', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
         <iframe
-          src="/api/chatbot/ui"
+          ref={iframeRef}
+          src={chatbotUrl}
           style={{ width: '100%', height: '100%', border: 'none' }}
           title="DaleIQ Assistant"
         />

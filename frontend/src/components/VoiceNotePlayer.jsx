@@ -54,7 +54,14 @@ const VoiceNotePlayer = ({
 }) => {
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [speed, setSpeed] = useState(1);
   const audioRef = useRef(null);
+
+  const toggleSpeed = () => {
+    const next = speed === 1 ? 1.5 : speed === 1.5 ? 2 : 1;
+    setSpeed(next);
+    if (audioRef.current) audioRef.current.playbackRate = next;
+  };
 
   const togglePlay = () => {
     if (!audioSrc) return;
@@ -156,7 +163,21 @@ const VoiceNotePlayer = ({
         <div style={{ flex: 1 }}>
           <Waveform peaks={waveformPeaks} progress={progress} compact />
         </div>
-        <span style={{ fontSize: 11, color: isOutbound ? 'rgba(255,255,255,0.6)' : 'var(--text-micro)', fontWeight: 600 }}>1×</span>
+        <button 
+          onClick={toggleSpeed}
+          style={{ 
+            fontSize: 11, 
+            color: isOutbound ? 'rgba(255,255,255,0.8)' : 'var(--text-micro)', 
+            fontWeight: 700,
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            padding: '2px 6px',
+            borderRadius: 4
+          }}
+        >
+          {speed}×
+        </button>
       </div>
 
       {!audioSrc && (

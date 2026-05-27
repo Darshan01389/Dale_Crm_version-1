@@ -1,7 +1,7 @@
 import os
 import uuid
 import shutil
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from app.core.database import get_db
@@ -9,6 +9,9 @@ from app.models.voice_recording import VoiceRecording
 from app.services.voice_service import voice_service
 from app.core.dependencies import get_current_user
 from app.models.user import User
+from app.models.activity import Activity
+from app.models.lead import Lead
+from datetime import datetime
 
 router = APIRouter(prefix="/voice", tags=["Voice AI"])
 
@@ -47,14 +50,14 @@ def stream_voice_recording(
 @router.post("/upload")
 async def upload_voice_recording(
     file: UploadFile = File(...),
-    lead_id: str = None,
+    lead_id: str = Form(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """
     Uploads a voice recording, transcribes it with Whisper, and performs AI analysis.
     """
-    if not file.filename.endswith((".mp3", ".wav", ".m4a", ".ogg")):
+    if not file.filename.endswith((".mp3", ".wav", ".m4a", ".ogg", ".webm")):
         raise HTTPException(status_code=400, detail="Unsupported audio format")
 
     file_id = str(uuid.uuid4())
@@ -88,6 +91,26 @@ async def upload_voice_recording(
     )
     
     db.add(recording)
+    
+    # 4. Create Activity
+    if lead_id:
+        activity = Activity(
+            lead_id=lead_id,
+            activity_type="voice",
+            subject="Call Recording Logged",
+            body=file_id,
+            occurred_at=datetime.utcnow()
+        )
+        db.add(activity)
+        
+        # 5. Pipeline Auto-Update
+        if analysis and analysis.get("suggested_stage"):
+            suggested = analysis.get("suggested_stage").lower()
+            lead = db.query(Lead).filter(Lead.id == lead_id).first()
+            if lead and suggested in ["contacted", "proposal", "negotiation", "won", "lost"]:
+                lead.status = suggested
+                db.add(lead)
+
     db.commit()
     db.refresh(recording)
 

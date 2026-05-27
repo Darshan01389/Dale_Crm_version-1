@@ -46,7 +46,8 @@ from app.core.database import Base, engine
 from app.models import (
     user as m_user, team as m_team, company as m_company, 
     lead as m_lead, deal as m_deal, activity as m_activity, 
-    pipeline_stage as m_stage, voice_recording as m_voice
+    pipeline_stage as m_stage, voice_recording as m_voice,
+    forum_post as m_forum_post
 )
 Base.metadata.create_all(bind=engine)
 
@@ -88,6 +89,7 @@ from app.routes.users import router as user_router
 from app.routes.chatbot import router as chatbot_router
 from app.routes.whatsapp import router as whatsapp_router
 from app.routes.tasks import router as task_router
+from app.routes.forum import router as forum_router
 
 app.include_router(auth_router)
 app.include_router(user_router)
@@ -104,6 +106,7 @@ app.include_router(ai_router)
 app.include_router(chatbot_router)   # Merged chatbot — no separate server needed
 app.include_router(whatsapp_router)  # WhatsApp Agent + Simulator
 app.include_router(task_router)      # AI Tasks & Stagnation
+app.include_router(forum_router)     # Community Forums
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):

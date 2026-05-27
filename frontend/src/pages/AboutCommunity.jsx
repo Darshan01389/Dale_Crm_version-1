@@ -1,6 +1,9 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const AboutCommunity = () => {
+  const navigate = useNavigate();
+  
   return (
     <div style={{ height: '100%', overflowY: 'auto', background: 'var(--bg)', padding: '40px 24px' }} className="custom-scroll animate-in">
       <div style={{ maxWidth: 900, margin: '0 auto' }}>
@@ -39,7 +42,7 @@ const AboutCommunity = () => {
               <p style={{ fontSize: 13, opacity: 0.9, marginBottom: 24, lineHeight: 1.6 }}>
                 Connect with 5,000+ sales professionals using Dale IQ to redefine their workflows.
               </p>
-              <button style={{
+              <button onClick={() => navigate('/community-forums')} style={{
                 width: '100%', padding: '14px', borderRadius: 12, border: 'none',
                 background: 'white', color: 'var(--primary)', fontWeight: 800, cursor: 'pointer'
               }}>

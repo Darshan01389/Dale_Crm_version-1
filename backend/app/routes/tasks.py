@@ -53,7 +53,7 @@ def trigger_stagnation_check(
     current_user: User = Depends(get_current_user)
 ):
     """Manually trigger the stagnation check and auto-reassignment."""
-    if current_user.role not in ["Owner / Admin", "Team Lead"]:
+    if current_user.role not in ["Owner / Admin", "Team Lead", "Manager", "Sales Admin", "admin", "admin/developers"]:
         raise HTTPException(status_code=403, detail="Only managers can trigger stagnation checks.")
     
     return StagnationService.auto_reassign_stagnant_leads(db)
