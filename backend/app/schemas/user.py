@@ -13,6 +13,7 @@ class UserRegister(BaseModel):
     email: EmailStr        # pydantic checks it's a valid email format
     password: str
     role: str = "Sales Rep"
+    invite_code: Optional[str] = None
 
     # Example of what this looks like in the API docs
     model_config = {
@@ -47,6 +48,8 @@ class UserResponse(BaseModel):
     email: str
     role: str
     is_active: bool
+    team_id: Optional[UUID] = None
+    company_id: Optional[int] = None
     created_at: datetime
 
     # This tells Pydantic to read data from SQLAlchemy objects

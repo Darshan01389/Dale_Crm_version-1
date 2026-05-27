@@ -12,6 +12,7 @@ class TeamCreate(TeamBase):
 
 class TeamResponse(TeamBase):
     id: UUID
+    join_code: Optional[str] = None
 
     class Config:
         from_attributes = True

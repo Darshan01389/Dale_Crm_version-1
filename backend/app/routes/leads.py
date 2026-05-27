@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, BackgroundTasks
+from fastapi import APIRouter, Depends, Query, BackgroundTasks, File, UploadFile, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -44,9 +44,7 @@ def get_lead_summary(
 ):
     """Generate a concise AI summary and next step for the lead."""
     report = lead_service.get_lead_report(db, lead_id, current_user)
-    from app.services.openai_message_service import generate_ai_summary
-    summary = generate_ai_summary(report["lead"], report["activities"], report["voice_recordings"])
-    return {"summary": summary}
+    return {"summary": report["ai_summary_card"]}
 
 
 @router.post("/{lead_id}/assign/{user_id}")
@@ -177,6 +175,94 @@ def ingest_lead(
 ):
     """Ingest a lead from raw text using AI extraction."""
     return lead_service.ingest_lead(db, current_user, body)
+
+
+@router.post("/import")
+def import_leads(
+    file: UploadFile = File(...),
+    background_tasks: BackgroundTasks = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Import contacts from CSV or Excel file."""
+    import io
+    import pandas as pd
+    
+    content = file.file.read()
+    try:
+        if file.filename.endswith(".csv") or file.filename.endswith(".txt"):
+            df = pd.read_csv(io.BytesIO(content))
+        elif file.filename.endswith((".xls", ".xlsx")):
+            df = pd.read_excel(io.BytesIO(content))
+        else:
+            raise HTTPException(status_code=400, detail="Invalid file type. Only CSV and Excel files are supported.")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to parse file: {str(e)}")
+
+    # Standardize column headers
+    df.columns = [str(c).strip().lower() for c in df.columns]
+
+    # Map headers to CRM schema fields
+    name_col = next((c for c in df.columns if c in ['title', 'name', 'full name', 'lead name', 'contact name']), None)
+    company_col = next((c for c in df.columns if c in ['company', 'organization', 'organisation', 'firm', 'company name']), None)
+    email_col = next((c for c in df.columns if c in ['email', 'email address', 'mail']), None)
+    phone_col = next((c for c in df.columns if c in ['phone', 'phone number', 'mobile', 'tel', 'contact', 'contact number']), None)
+    status_col = next((c for c in df.columns if c in ['status', 'stage', 'lead status']), None)
+    source_col = next((c for c in df.columns if c in ['source', 'origin', 'lead source']), None)
+    notes_col = next((c for c in df.columns if c in ['notes', 'note', 'description', 'desc', 'comments']), None)
+    occupation_col = next((c for c in df.columns if c in ['occupation', 'job', 'role', 'profession', 'job title']), None)
+    education_col = next((c for c in df.columns if c in ['education', 'degree', 'qualification']), None)
+    age_col = next((c for c in df.columns if c in ['age']), None)
+    deal_value_col = next((c for c in df.columns if c in ['deal value', 'deal_value', 'value', 'amount', 'deal amount']), None)
+
+    imported_count = 0
+    errors = []
+
+    for index, row in df.iterrows():
+        try:
+            # Name/title is required. Use "Imported Lead <Index>" if missing.
+            title_val = str(row[name_col]).strip() if name_col and pd.notna(row[name_col]) else f"Imported Lead {index + 1}"
+            
+            company_val = str(row[company_col]).strip() if company_col and pd.notna(row[company_col]) else None
+            email_val = str(row[email_col]).strip() if email_col and pd.notna(row[email_col]) else None
+            phone_val = str(row[phone_col]).strip() if phone_col and pd.notna(row[phone_col]) else None
+            status_val = str(row[status_col]).strip() if status_col and pd.notna(row[status_col]) else "new"
+            source_val = str(row[source_col]).strip() if source_col and pd.notna(row[source_col]) else "CSV/Excel Import"
+            notes_val = str(row[notes_col]).strip() if notes_col and pd.notna(row[notes_col]) else None
+            occupation_val = str(row[occupation_col]).strip() if occupation_col and pd.notna(row[occupation_col]) else None
+            education_val = str(row[education_col]).strip() if education_col and pd.notna(row[education_col]) else None
+            
+            try:
+                age_val = float(row[age_col]) if age_col and pd.notna(row[age_col]) else None
+            except:
+                age_val = None
+                
+            try:
+                deal_value_val = float(row[deal_value_col]) if deal_value_col and pd.notna(row[deal_value_col]) else None
+            except:
+                deal_value_val = None
+
+            lead_data = LeadCreate(
+                title=title_val[:500],
+                company=company_val[:500] if company_val else None,
+                email=email_val[:320] if email_val else None,
+                phone=phone_val[:64] if phone_val else None,
+                status=status_val[:64],
+                source=source_val[:200],
+                notes=notes_val,
+                occupation=occupation_val[:120] if occupation_val else None,
+                education=education_val[:120] if education_val else None,
+                age=age_val,
+                deal_value=deal_value_val
+            )
+            
+            lead_service.create_lead(db, current_user, lead_data, background_tasks)
+            imported_count += 1
+        except Exception as row_err:
+            errors.append(f"Row {index + 1}: {str(row_err)}")
+
+    return {"status": "success", "imported": imported_count, "errors": errors}
+
 
 
 @router.get("/priority", response_model=list[LeadResponse])

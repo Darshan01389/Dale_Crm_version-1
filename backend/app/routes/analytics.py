@@ -21,6 +21,14 @@ def dashboard(
     return analytics_service.build_dashboard(db, current_user, date_range=date_range)
 
 
+@router.get("/team-progress")
+def team_progress(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Provides a detailed progress report for all teams and individual team members."""
+    return analytics_service.get_team_progress_report(db)
+
 
 @router.post("/train", response_model=ModelTrainingMetrics)
 def train_model():

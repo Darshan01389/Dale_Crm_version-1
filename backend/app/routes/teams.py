@@ -51,3 +51,16 @@ def list_members(
 ):
     members = team_service.list_team_members(db, team_id)
     return [{"id": m.id, "name": m.name, "email": m.email, "role": m.role} for m in members]
+
+
+@router.delete("/{team_id}")
+def delete_team(
+    team_id: UUID,
+    db: Session = Depends(get_db),
+    _admin: User = Depends(get_admin_user),
+):
+    """Admin only: Delete a team squad completely."""
+    success = team_service.delete_team(db, team_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Team not found")
+    return {"message": "Team deleted successfully"}

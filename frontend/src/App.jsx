@@ -143,7 +143,7 @@ const App = () => {
         {protected_route('/calendar',    Calendar,        ['Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
         {protected_route('/leads/:id',   LeadDetails,     ['Sales Rep', 'Sales', 'Team Lead', 'Manager'])}
         {protected_route('/sources',     LeadSourceHub,   ['Owner / Admin', 'Sales Admin'])}
-        {protected_route('/team-mgmt',   TeamManagement,  ['Owner / Admin', 'Sales Admin'])}
+        {protected_route('/team-mgmt',   TeamManagement,  ['Owner / Admin', 'Sales Admin', 'Team Lead', 'Manager'])}
         {protected_route('/org-settings',OrgSettings,     ['Owner / Admin', 'Sales Admin'])}
         {protected_route('/team-reports',TeamReports,     ['Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
         {protected_route('/help',        HelpSupport,     ['Sales Rep', 'Sales', 'Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}

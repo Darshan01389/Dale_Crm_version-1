@@ -1,13 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AnimatedBackground from '../components/AnimatedBackground';
 
 const Register = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'Sales Rep' });
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'Sales Rep', invite_code: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code') || '';
+    if (code) {
+      setFormData(prev => ({ ...prev, invite_code: code }));
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -165,6 +173,19 @@ const Register = () => {
                     className="input"
                     value={formData.password}
                     onChange={e => setFormData({ ...formData, password: e.target.value })}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Join Code / Team Invite Code (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 523194"
+                    className="input"
+                    value={formData.invite_code}
+                    onChange={e => setFormData({ ...formData, invite_code: e.target.value })}
                   />
                 </div>
 

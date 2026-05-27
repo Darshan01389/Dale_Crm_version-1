@@ -27,6 +27,22 @@ def register_user(db: Session, user_data: UserRegister) -> User:
             detail="Email already registered. Please use a different email."
         )
 
+    # Resolve invite code if present
+    team_id = None
+    if user_data.invite_code:
+        from app.models.team import Team
+        team = db.query(Team).filter(Team.join_code == user_data.invite_code).first()
+        if team:
+            team_id = team.id
+        else:
+            from app.models.company import Company
+            company = db.query(Company).filter(Company.join_code == user_data.invite_code).first()
+            if not company:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid Organization or Team Join Code. Please verify your invitation."
+                )
+
     # Step 2 — Hash the password (NEVER store plain text)
     hashed = hash_password(user_data.password)
 
@@ -35,7 +51,8 @@ def register_user(db: Session, user_data: UserRegister) -> User:
         name=user_data.name,
         email=user_data.email,
         password_hash=hashed,
-        role=user_data.role or "Sales Rep"
+        role=user_data.role or "Sales Rep",
+        team_id=team_id
     )
 
     # Step 4 — Save to database

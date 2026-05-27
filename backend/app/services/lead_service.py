@@ -390,7 +390,10 @@ def delete_lead(db: Session, lead_id: UUID, user: User) -> None:
     db.commit()
 
 
-def get_lead_report(db: Session, lead_id: UUID, user: User):
+_AI_SUMMARY_CACHE = {}
+
+
+def get_lead_report(db: Session, lead_id: UUID, user: User, use_strategy: bool = True):
     lead = get_lead(db, lead_id, user)
     
     # Fetch activities
@@ -407,11 +410,23 @@ def get_lead_report(db: Session, lead_id: UUID, user: User):
     elif lead.sentiment_label == "negative":
         risk_assessment = "High Risk: Negative Sentiment Detected"
         
-    from app.services.openai_message_service import generate_ai_summary
+    # In-memory cache key incorporating lead state, activity counts, and strategy toggle
+    cache_key = (
+        str(lead.id),
+        lead.updated_at.isoformat() if lead.updated_at else "",
+        len(activities),
+        len(recordings),
+        use_strategy
+    )
     
-    # Generate real-time AI summary or use cached if performance is an issue
-    # For MVP/Enterprise, we generate it on the fly or we could cache it in DB. Let's do on-the-fly.
-    ai_summary = generate_ai_summary(lead, activities, recordings)
+    if cache_key in _AI_SUMMARY_CACHE:
+        ai_summary = _AI_SUMMARY_CACHE[cache_key]
+        print(f"[AI Summary Cache] HIT (strategy={use_strategy}) for lead {lead.title}")
+    else:
+        print(f"[AI Summary Cache] MISS (strategy={use_strategy}) for lead {lead.title} - Generating new AI summary...")
+        from app.services.openai_message_service import generate_ai_summary
+        ai_summary = generate_ai_summary(lead, activities, recordings, use_strategy=use_strategy)
+        _AI_SUMMARY_CACHE[cache_key] = ai_summary
     
     return {
         "lead": lead,

@@ -50,6 +50,29 @@ from app.models import (
 )
 Base.metadata.create_all(bind=engine)
 
+# Raw SQL migration to add join_code columns in PostgreSQL
+with engine.begin() as conn:
+    try:
+        conn.execute(text("ALTER TABLE companies ADD COLUMN IF NOT EXISTS join_code VARCHAR(10)"))
+    except Exception as e:
+        print(f"Migration error for companies join_code: {e}")
+    try:
+        conn.execute(text("ALTER TABLE teams ADD COLUMN IF NOT EXISTS join_code VARCHAR(10)"))
+    except Exception as e:
+        print(f"Migration error for teams join_code: {e}")
+    try:
+        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES companies(id)"))
+    except Exception as e:
+        print(f"Migration error for users company_id: {e}")
+    try:
+        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS company_banned BOOLEAN DEFAULT FALSE"))
+    except Exception as e:
+        print(f"Migration error for users company_banned: {e}")
+    try:
+        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS banned_team_ids VARCHAR DEFAULT ''"))
+    except Exception as e:
+        print(f"Migration error for users banned_team_ids: {e}")
+
 from app.routes.auth import router as auth_router
 from app.routes.leads import router as lead_router
 from app.api.voice import router as voice_router
@@ -108,3 +131,7 @@ def health_check():
     except Exception as e:
         db_status = f"error: {str(e)}"
     return {"status": "healthy", "database": db_status, "ml": ml_status()}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

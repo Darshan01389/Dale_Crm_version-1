@@ -1,9 +1,195 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import SetupChecklist from '../components/SetupChecklist';
 import FoundingWelcome from '../components/FoundingWelcome';
 import { useUser } from '../contexts/UserContext';
+import { useToast } from '../contexts/ToastContext';
+
+const JoinCodeWidget = () => {
+  const [code, setCode] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [status, setStatus] = useState(null); // 'success' or 'already' or 'error'
+  const [showScanner, setShowScanner] = useState(false);
+  const { show: showToast } = useToast();
+
+  const handleJoin = async (enteredCode) => {
+    const codeToSubmit = enteredCode || code;
+    if (!codeToSubmit.trim()) return;
+    setLoading(true);
+    setMessage('');
+    setStatus(null);
+    try {
+      const token = localStorage.getItem('voiceiq_token');
+      const res = await axios.post('/api/users/join', { code: codeToSubmit.trim() }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setStatus(res.data.status);
+      setMessage(res.data.message);
+      if (res.data.status === 'success') {
+        showToast({ type: 'success', message: res.data.message });
+      } else {
+        showToast({ type: 'info', message: res.data.message });
+      }
+      setCode('');
+    } catch (err) {
+      console.error(err);
+      setStatus('error');
+      const errMsg = err.response?.data?.detail || 'Invalid Invite or Join Code.';
+      setMessage(errMsg);
+      showToast({ type: 'error', message: errMsg });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    let scanner = null;
+    if (showScanner) {
+      const initScanner = () => {
+        if (!window.Html5QrcodeScanner) {
+          console.error("Html5QrcodeScanner not loaded yet");
+          return;
+        }
+        scanner = new window.Html5QrcodeScanner("qr-reader", {
+          fps: 10,
+          qrbox: { width: 220, height: 220 }
+        }, false);
+        
+        scanner.render((decodedText) => {
+          let extractedCode = decodedText;
+          if (decodedText.includes('code=')) {
+            const parts = decodedText.split('code=');
+            if (parts.length > 1) {
+              extractedCode = parts[1].split('&')[0];
+            }
+          }
+          showToast({ type: 'success', message: 'QR Code Scanned successfully!' });
+          setCode(extractedCode);
+          setShowScanner(false);
+          // Auto submit
+          handleJoin(extractedCode);
+        }, (err) => {
+          // Silent scan errors
+        });
+      };
+
+      if (!window.Html5QrcodeScanner) {
+        const script = document.createElement('script');
+        script.src = "https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js";
+        script.async = true;
+        script.onload = initScanner;
+        document.body.appendChild(script);
+      } else {
+        // Wait a tick for the div container to render
+        setTimeout(initScanner, 100);
+      }
+    }
+
+    return () => {
+      if (scanner) {
+        scanner.clear().catch(e => console.error("Error clearing scanner on unmount:", e));
+      }
+    };
+  }, [showScanner]);
+
+  return (
+    <div className="card glass animate-in" style={{ padding: '20px 24px', borderRadius: 16, border: '1px dashed var(--primary)', marginBottom: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+        <div style={{ flex: 1, minWidth: 280 }}>
+          <h4 style={{ fontSize: 14, fontWeight: 800, margin: 0, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
+            🔗 Join Organisation or Squad
+          </h4>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '4px 0 0' }}>
+            Got an invitation code? Enter your 6-digit code or scan the QR code to join your company workspace or squad.
+          </p>
+        </div>
+        <form onSubmit={(e) => { e.preventDefault(); handleJoin(); }} style={{ display: 'flex', gap: 10, flexWrap: 'wrap', maxWidth: 460, width: '100%' }}>
+          <input 
+            className="input" 
+            placeholder="Enter 6-digit code..." 
+            value={code} 
+            onChange={e => setCode(e.target.value)}
+            style={{ flex: 1, height: 38, padding: '0 12px', fontSize: 13, borderRadius: 8 }}
+          />
+          <button 
+            type="button"
+            onClick={() => setShowScanner(true)}
+            className="btn-secondary"
+            style={{ height: 38, padding: '0 12px', borderRadius: 8, fontSize: 13, display: 'flex', alignItems: 'center', gap: 6, minHeight: 'auto', minWidth: 'auto', border: '1px solid var(--border)' }}
+          >
+            📷 Scan QR
+          </button>
+          <button 
+            type="submit" 
+            className="btn-primary" 
+            disabled={loading}
+            style={{ height: 38, padding: '0 16px', borderRadius: 8, fontSize: 13, minHeight: 'auto', minWidth: 'auto' }}
+          >
+            {loading ? 'Joining...' : 'Join Workspace'}
+          </button>
+        </form>
+      </div>
+
+      {message && (
+        <div style={{ 
+          marginTop: 16, padding: '10px 14px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+          background: status === 'success' ? 'rgba(16, 185, 129, 0.08)' : status === 'already' ? 'rgba(59, 130, 246, 0.08)' : 'rgba(239, 68, 68, 0.08)',
+          border: `1px solid ${status === 'success' ? 'rgba(16, 185, 129, 0.2)' : status === 'already' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`,
+          color: status === 'success' ? 'var(--success)' : status === 'already' ? 'var(--info)' : 'var(--danger)',
+          display: 'flex', alignItems: 'center', gap: 8
+        }}>
+          <span>{status === 'success' ? '🎉' : status === 'already' ? 'ℹ' : '⚠'}</span>
+          {message}
+        </div>
+      )}
+
+      {/* Camera Scanner Modal Overlay */}
+      {showScanner && createPortal(
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(10px)',
+          zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          animation: 'fadeIn 0.2s ease-out'
+        }}>
+          <div className="card glass" style={{
+            width: '90%', maxWidth: 420, padding: 24, borderRadius: 20,
+            border: '1px solid rgba(255,255,255,0.1)', background: 'var(--bg-surface)',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.4)', position: 'relative'
+          }}>
+            <button 
+              onClick={() => setShowScanner(false)}
+              style={{
+                position: 'absolute', top: 16, right: 16, border: 'none', background: 'var(--bg-subtle)',
+                color: 'var(--text)', width: 30, height: 30, borderRadius: '50%', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 13
+              }}
+            >
+              ✕
+            </button>
+            <h3 style={{ fontSize: 16, fontWeight: 900, margin: '0 0 10px', display: 'flex', alignItems: 'center', gap: 8 }}>
+              📷 Scan Invitation QR Code
+            </h3>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 20px', lineHeight: 1.4 }}>
+              Allow camera permission when prompted. Center the QR code in the scanning box.
+            </p>
+            
+            <div id="qr-reader" style={{ 
+              width: '100%', 
+              borderRadius: 12, 
+              overflow: 'hidden', 
+              border: '1px solid var(--border)',
+              background: '#090D16'
+            }} />
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+};
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -86,6 +272,9 @@ const Dashboard = () => {
           <SetupChecklist />
         </div>
       )}
+
+      {/* Join Organisation / Team Widget */}
+      <JoinCodeWidget />
 
       {/* KPI Cards */}
       <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, marginBottom: 40 }}>

@@ -13,6 +13,7 @@ from app.models.deal import Deal
 from app.models.lead import Lead
 from app.models.pipeline_stage import PipelineStage
 from app.models.user import User
+from app.models.team import Team
 from app.schemas.analytics import (
     AnalyticsDashboard,
     StageFunnelItem,
@@ -293,4 +294,110 @@ def build_dashboard(db: Session, user: User, date_range: str = "30 Days") -> Ana
         return dash
     except Exception:
         return build_dataset_dashboard()
+
+
+def get_team_progress_report(db: Session):
+    """Compiles aggregated progress stats for all teams and individual members."""
+    # 1. Fetch all users and teams
+    users = db.query(User).all()
+    teams = db.query(Team).all()
+    team_map = {t.id: t.name for t in teams}
+    
+    # 2. Compile individual members progress report
+    members_report = []
+    for u in users:
+        leads = db.query(Lead).filter(Lead.owner_id == u.id).all()
+        leads_count = len(leads)
+        
+        valid_scores = [l.ai_score for l in leads if l.ai_score is not None]
+        avg_ai_score = sum(valid_scores) / len(valid_scores) if valid_scores else 0.0
+        
+        deals = db.query(Deal).filter(Deal.owner_id == u.id).all()
+        deals_open = len([d for d in deals if d.outcome == "open"])
+        deals_won = len([d for d in deals if d.outcome == "won"])
+        deals_lost = len([d for d in deals if d.outcome == "lost"])
+        revenue_won = sum(d.amount for d in deals if d.outcome == "won")
+        
+        closed = deals_won + deals_lost
+        win_rate = (100.0 * deals_won / closed) if closed > 0 else 0.0
+        
+        members_report.append({
+            "id": str(u.id),
+            "name": u.name,
+            "email": u.email,
+            "role": u.role,
+            "team_id": str(u.team_id) if u.team_id else None,
+            "team_name": team_map.get(u.team_id) if u.team_id else "Unassigned",
+            "leads_count": leads_count,
+            "deals_open": deals_open,
+            "deals_won": deals_won,
+            "deals_lost": deals_lost,
+            "revenue_won": float(revenue_won),
+            "win_rate": round(win_rate, 2),
+            "avg_ai_score": round(avg_ai_score, 1)
+        })
+
+    # 3. Compile teams aggregated progress report
+    teams_report = []
+    for t in teams:
+        t_members = [m for m in members_report if m["team_id"] == str(t.id)]
+        member_count = len(t_members)
+        
+        leads_count = sum(m["leads_count"] for m in t_members)
+        deals_open = sum(m["deals_open"] for m in t_members)
+        deals_won = sum(m["deals_won"] for m in t_members)
+        deals_lost = sum(m["deals_lost"] for m in t_members)
+        revenue_won = sum(m["revenue_won"] for m in t_members)
+        
+        closed = deals_won + deals_lost
+        win_rate = (100.0 * deals_won / closed) if closed > 0 else 0.0
+        
+        avg_ai_score = sum(m["avg_ai_score"] * m["leads_count"] for m in t_members) / leads_count if leads_count > 0 else 0.0
+        
+        teams_report.append({
+            "id": str(t.id),
+            "name": t.name,
+            "description": t.description or "Sales Squad",
+            "member_count": member_count,
+            "leads_count": leads_count,
+            "deals_open": deals_open,
+            "deals_won": deals_won,
+            "deals_lost": deals_lost,
+            "revenue_won": float(revenue_won),
+            "win_rate": round(win_rate, 2),
+            "avg_ai_score": round(avg_ai_score, 1)
+        })
+        
+    # Compile unassigned members as a pseudo-team to ensure 100% data coverage
+    unassigned_members = [m for m in members_report if m["team_id"] is None]
+    if unassigned_members:
+        leads_count = sum(m["leads_count"] for m in unassigned_members)
+        deals_open = sum(m["deals_open"] for m in unassigned_members)
+        deals_won = sum(m["deals_won"] for m in unassigned_members)
+        deals_lost = sum(m["deals_lost"] for m in unassigned_members)
+        revenue_won = sum(m["revenue_won"] for m in unassigned_members)
+        
+        closed = deals_won + deals_lost
+        win_rate = (100.0 * deals_won / closed) if closed > 0 else 0.0
+        avg_ai_score = sum(m["avg_ai_score"] * m["leads_count"] for m in unassigned_members) / leads_count if leads_count > 0 else 0.0
+        
+        teams_report.append({
+            "id": "unassigned",
+            "name": "Unassigned Squad",
+            "description": "Members not assigned to a designated team.",
+            "member_count": len(unassigned_members),
+            "leads_count": leads_count,
+            "deals_open": deals_open,
+            "deals_won": deals_won,
+            "deals_lost": deals_lost,
+            "revenue_won": float(revenue_won),
+            "win_rate": round(win_rate, 2),
+            "avg_ai_score": round(avg_ai_score, 1)
+        })
+
+    return {
+        "teams": teams_report,
+        "members": members_report
+    }
+
 

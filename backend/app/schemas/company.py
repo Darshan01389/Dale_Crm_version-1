@@ -10,6 +10,7 @@ class CompanyOut(BaseModel):
     name: str
     industry: str
     whatsapp_number: str
+    join_code: str | None = None
 
     class Config:
         from_attributes = True

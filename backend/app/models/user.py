@@ -23,6 +23,9 @@ class User(Base):
     password_hash = Column(String, nullable=False)       # never store plain password
     role = Column(String, default="Sales Rep")  # Sales Rep / Team Lead / Owner / Admin
     team_id = Column(UUID(as_uuid=True), ForeignKey("teams.id"), nullable=True)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
+    company_banned = Column(Boolean, default=False)
+    banned_team_ids = Column(String, default="")
     is_active = Column(Boolean, default=True)
     whatsapp_number = Column(String(20), nullable=True)  # Company WhatsApp number for Sales/Team Lead
     company_email = Column(String, nullable=True)        # Company Email for outreach

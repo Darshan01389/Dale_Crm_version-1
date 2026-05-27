@@ -8,7 +8,9 @@ router = APIRouter(prefix="/company", tags=["Company"])
 
 @router.post("/", response_model=CompanyOut)
 def create_company(company: CompanyCreate, db: Session = Depends(get_db)):
+    import random
     new_company = Company(**company.dict())
+    new_company.join_code = str(random.randint(100000, 999999))
     db.add(new_company)
     db.commit()
     db.refresh(new_company)
@@ -17,4 +19,13 @@ def create_company(company: CompanyCreate, db: Session = Depends(get_db)):
 
 @router.get("/", response_model=list[CompanyOut])
 def get_companies(db: Session = Depends(get_db)):
-    return db.query(Company).all()
+    companies = db.query(Company).all()
+    import random
+    updated = False
+    for c in companies:
+        if not c.join_code:
+            c.join_code = str(random.randint(100000, 999999))
+            updated = True
+    if updated:
+        db.commit()
+    return companies

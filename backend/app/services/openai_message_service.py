@@ -99,7 +99,7 @@ def generate_whatsapp_message(
             "I’m here to help you with next steps — just reply and I’ll share a tailored proposal."
         )
 
-def generate_ai_summary(lead, activities, voice_recordings) -> str:
+def generate_ai_summary(lead, activities, voice_recordings, use_strategy: bool = True) -> str:
     if not settings.USE_OLLAMA_FOR_ALL:
         return "Deal is progressing. Suggested next step: Follow up with prospect."
 
@@ -122,8 +122,11 @@ def generate_ai_summary(lead, activities, voice_recordings) -> str:
         "recent_calls": voice_text
     }
 
+    # Dynamic model routing: STRATEGY_MODEL (70B) for deep insights, CHAT_MODEL (8B) for speed
+    model = settings.STRATEGY_MODEL if use_strategy else settings.CHAT_MODEL
+
     body = {
-        "model": settings.STRATEGY_MODEL,
+        "model": model,
         "temperature": 0.5,
         "messages": [
             {"role": "system", "content": prompt},
@@ -132,11 +135,11 @@ def generate_ai_summary(lead, activities, voice_recordings) -> str:
     }
 
     try:
-        return _llm_request(body, model_override=settings.STRATEGY_MODEL)
+        return _llm_request(body, model_override=model)
     except Exception:
         return "Deal is progressing. Suggested next step: Follow up with prospect."
 
-def ai_suggest_reply(lead, activities, voice_recordings, channel="whatsapp") -> dict:
+def ai_suggest_reply(lead, activities, voice_recordings, channel="whatsapp", use_strategy: bool = False) -> dict:
     if not settings.USE_OLLAMA_FOR_ALL:
         res = {"draft": f"Hi {lead.title},\n\nFollowing up on our recent conversation via {channel}. How would you like to proceed?"}
         if channel == "email":
@@ -167,8 +170,11 @@ def ai_suggest_reply(lead, activities, voice_recordings, channel="whatsapp") -> 
         "channel": channel
     }
 
+    # Dynamic model routing: STRATEGY_MODEL (70B) for deep insights, CHAT_MODEL (8B) for speed
+    model = settings.STRATEGY_MODEL if use_strategy else settings.CHAT_MODEL
+
     body = {
-        "model": settings.STRATEGY_MODEL,
+        "model": model,
         "temperature": 0.7,
         "messages": [
             {"role": "system", "content": prompt},
@@ -177,7 +183,7 @@ def ai_suggest_reply(lead, activities, voice_recordings, channel="whatsapp") -> 
     }
 
     try:
-        raw_res = _llm_request(body, model_override=settings.STRATEGY_MODEL)
+        raw_res = _llm_request(body, model_override=model)
         if channel == "email":
             # Try to parse JSON from LLM
             try:

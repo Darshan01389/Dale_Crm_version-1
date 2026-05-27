@@ -9,3 +9,4 @@ class Team(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name = Column(String, nullable=False, unique=True)
     description = Column(String, nullable=True)
+    join_code = Column(String(10), nullable=True)
