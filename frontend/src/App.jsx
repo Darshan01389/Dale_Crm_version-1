@@ -1,38 +1,46 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
-import Dashboard from './pages/Dashboard';
-import Leads from './pages/Leads';
-import GlobalInbox from './pages/GlobalInbox';
-import Kanban from './pages/Kanban';
-import MobilePipeline from './pages/MobilePipeline';
-import CallCoach from './pages/CallCoach';
-import Forecast from './pages/Forecast';
-import Settings from './pages/Settings';
-import Login from './pages/Login';
-import Register from './pages/Register';
 import { useUser } from './contexts/UserContext';
 import MobileNav from './components/MobileNav';
-import Today from './pages/Today';
-import WelcomeWizard from './pages/WelcomeWizard';
-import Calendar from './pages/Calendar';
-import LeadSourceHub from './pages/LeadSourceHub';
-import LeadDetails from './pages/LeadDetails';
-import RepPulse from './pages/RepPulse';
-import TeamManagement from './pages/TeamManagement';
-import OrgSettings from './pages/OrgSettings';
-import TeamReports from './pages/TeamReports';
-import HelpSupport from './pages/HelpSupport';
-import Billing from './pages/Billing';
-import ChannelSettings from './pages/ChannelSettings';
-import ForgotPassword from './pages/ForgotPassword';
-import AboutCommunity from './pages/AboutCommunity';
-import CommunityForums from './pages/CommunityForums';
 import OfflineBanner from './components/OfflineBanner';
 import { ToastProvider } from './contexts/ToastContext';
 import { PersonaProvider } from './contexts/PersonaContext';
-import WhatsAppSimulator from './pages/WhatsAppSimulator';
+
+// Load Auth pages instantly
+import Login from './pages/Login';
+import Register from './pages/Register';
+import ForgotPassword from './pages/ForgotPassword';
+
+// Lazy load everything else
+const Dashboard = React.lazy(() => import('./pages/Dashboard'));
+const Leads = React.lazy(() => import('./pages/Leads'));
+const GlobalInbox = React.lazy(() => import('./pages/GlobalInbox'));
+const Kanban = React.lazy(() => import('./pages/Kanban'));
+const MobilePipeline = React.lazy(() => import('./pages/MobilePipeline'));
+const CallCoach = React.lazy(() => import('./pages/CallCoach'));
+const Forecast = React.lazy(() => import('./pages/Forecast'));
+const Settings = React.lazy(() => import('./pages/Settings'));
+const Today = React.lazy(() => import('./pages/Today'));
+const WelcomeWizard = React.lazy(() => import('./pages/WelcomeWizard'));
+const Calendar = React.lazy(() => import('./pages/Calendar'));
+const LeadSourcesLayout = React.lazy(() => import('./pages/LeadSources/LeadSourcesLayout'));
+const ConnectedSources = React.lazy(() => import('./pages/LeadSources/ConnectedSources'));
+const AddSourceWizard = React.lazy(() => import('./pages/LeadSources/AddSourceWizard'));
+const CampaignAnalytics = React.lazy(() => import('./pages/LeadSources/CampaignAnalytics'));
+const AutomationRules = React.lazy(() => import('./pages/LeadSources/AutomationRules'));
+const LeadDetails = React.lazy(() => import('./pages/LeadDetails'));
+const RepPulse = React.lazy(() => import('./pages/RepPulse'));
+const TeamManagement = React.lazy(() => import('./pages/TeamManagement'));
+const OrgSettings = React.lazy(() => import('./pages/OrgSettings'));
+const TeamReports = React.lazy(() => import('./pages/TeamReports'));
+const HelpSupport = React.lazy(() => import('./pages/HelpSupport'));
+const Billing = React.lazy(() => import('./pages/Billing'));
+const ChannelSettings = React.lazy(() => import('./pages/ChannelSettings'));
+const AboutCommunity = React.lazy(() => import('./pages/AboutCommunity'));
+const CommunityForums = React.lazy(() => import('./pages/CommunityForums'));
+const WhatsAppSimulator = React.lazy(() => import('./pages/WhatsAppSimulator'));
 
 // mobile detection hook
 const useIsMobile = () => {
@@ -104,6 +112,7 @@ const App = () => {
   <ToastProvider>
     <PersonaProvider>
       <OfflineBanner />
+      <Suspense fallback={<div style={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center' }}>Loading application...</div>}>
       <Routes>
         {/* Public */}
         <Route path="/login"    element={<Login />} />
@@ -143,7 +152,20 @@ const App = () => {
         <Route path="/welcome" element={<PrivateRoute element={<WelcomeWizard />} />} />
         {protected_route('/calendar',    Calendar,        ['Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
         {protected_route('/leads/:id',   LeadDetails,     ['Sales Rep', 'Sales', 'Team Lead', 'Manager'])}
-        {protected_route('/sources',     LeadSourceHub,   ['Owner / Admin', 'Sales Admin'])}
+        
+        {/* Lead Sources Nested Routes */}
+        <Route path="/sources" element={
+          <PrivateRoute element={
+            <RoleRoute roles={['Owner / Admin', 'Sales Admin']} element={<AppShell><LeadSourcesLayout /></AppShell>} fallback="/" />
+          } />
+        }>
+          <Route index element={<Navigate to="connected" replace />} />
+          <Route path="connected" element={<ConnectedSources />} />
+          <Route path="add" element={<AddSourceWizard />} />
+          <Route path="analytics" element={<CampaignAnalytics />} />
+          <Route path="automation" element={<AutomationRules />} />
+          <Route path="webhooks" element={<div style={{padding: 40}}>Webhook Logs (Phase 2)</div>} />
+        </Route>
         {protected_route('/team-mgmt',   TeamManagement,  ['Owner / Admin', 'Sales Admin', 'Team Lead', 'Manager'])}
         {protected_route('/org-settings',OrgSettings,     ['Owner / Admin', 'Sales Admin'])}
         {protected_route('/team-reports',TeamReports,     ['Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
@@ -167,9 +189,10 @@ const App = () => {
           }
         />
 
-        {/* Fallback */}
+        {/* Catch all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
     </PersonaProvider>
   </ToastProvider>
   );

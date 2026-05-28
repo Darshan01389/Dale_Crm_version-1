@@ -126,6 +126,7 @@ def _async_lead_ai_processing(lead_id: UUID, user_id: UUID, data: LeadCreate):
     from app.core.database import SessionLocal
     from app.models.lead import Lead
     from app.models.user import User
+    from app.services.automation_service import evaluate_rules_for_lead
     
     db = SessionLocal()
     try:
@@ -142,10 +143,22 @@ def _async_lead_ai_processing(lead_id: UUID, user_id: UUID, data: LeadCreate):
             analysis = analyze_new_lead(data)
             _apply_analysis_to_lead(lead, analysis)
             db.commit()
+            
+            # Increment AI Usage
+            from app.services.billing_service import increment_ai_usage
+            increment_ai_usage(db, lead.company_id)
+            
             print(f"[Background Task] AI Analysis complete for lead: {lead.title}")
         except Exception as e:
             print(f"[Background Task] AI Analysis failed: {e}")
             # Continue to WhatsApp even if analysis fails
+
+        # 1.5 Evaluate Automation Rules
+        try:
+            evaluate_rules_for_lead(db, lead.id, user.id)
+            print(f"[Background Task] Automation Rules evaluated for lead: {lead.title}")
+        except Exception as e:
+            print(f"[Background Task] Automation Rules failed: {e}")
         
         # 2. Auto-send initial WhatsApp outreach (LLM + External API)
         if lead.phone:

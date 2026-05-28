@@ -9,6 +9,16 @@ const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showFluid, setShowFluid] = useState(false);
+
+  React.useEffect(() => {
+    // Secretly wake up the AI models so they are ready by the time the user logs in
+    fetch('/api/system/prewarm').catch(() => {});
+    
+    // Defer the fluid background rendering so the form appears instantly
+    const timer = setTimeout(() => setShowFluid(true), 200);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleGoogleLogin = () => {
     setLoading(true);
@@ -89,7 +99,7 @@ const Login = () => {
       overflowY: 'auto',
       padding: '16px 0',
     }}>
-      <FluidBackground />
+      {showFluid && <FluidBackground />}
 
       {/* Decorative Blur Orbs */}
       <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '40%', height: '40%', background: 'radial-gradient(circle, var(--primary-glow) 0%, transparent 70%)', filter: 'blur(80px)', pointerEvents: 'none' }} />

@@ -47,7 +47,11 @@ from app.models import (
     user as m_user, team as m_team, company as m_company, 
     lead as m_lead, deal as m_deal, activity as m_activity, 
     pipeline_stage as m_stage, voice_recording as m_voice,
-    forum_post as m_forum_post
+    forum_post as m_forum_post, lead_source as m_lead_source,
+    webhook_log as m_webhook_log, campaign as m_campaign,
+    utm_tracking as m_utm, website_event as m_event,
+    campaign_metric as m_metric, automation_rule as m_automation,
+    billing as m_billing
 )
 Base.metadata.create_all(bind=engine)
 
@@ -90,6 +94,12 @@ from app.routes.chatbot import router as chatbot_router
 from app.routes.whatsapp import router as whatsapp_router
 from app.routes.tasks import router as task_router
 from app.routes.forum import router as forum_router
+from app.routes.lead_sources import router as lead_source_router
+from app.routes.webhooks import router as webhook_router
+from app.routes.events import router as event_router
+from app.routes.automation import router as automation_router
+from app.routes.billing import router as billing_router
+from app.routes.system import router as system_router
 
 app.include_router(auth_router)
 app.include_router(user_router)
@@ -107,6 +117,12 @@ app.include_router(chatbot_router)   # Merged chatbot — no separate server nee
 app.include_router(whatsapp_router)  # WhatsApp Agent + Simulator
 app.include_router(task_router)      # AI Tasks & Stagnation
 app.include_router(forum_router)     # Community Forums
+app.include_router(lead_source_router)
+app.include_router(webhook_router)
+app.include_router(event_router)
+app.include_router(automation_router)
+app.include_router(billing_router)
+app.include_router(system_router)
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):

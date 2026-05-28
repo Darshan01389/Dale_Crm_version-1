@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     OLLAMA_MODEL: str = "meta/llama-3.1-8b-instruct" # Default fallback
     STRATEGY_MODEL: str = "meta/llama-3.3-70b-instruct" # For deep reasoning
     CHAT_MODEL: str = "meta/llama-3.1-8b-instruct" # For fast chat/tasks
+    VOICE_MODEL: str = "meta/llama-3.1-70b-instruct" # Dedicated for large context audio/voice
+    ANALYTICS_MODEL: str = "mistralai/mixtral-8x7b-instruct-v0.1" # Dedicated for optimization and cron jobs
     NVIDIA_API_KEY: str | None = None # Can be a comma-separated list of keys
     
     @property

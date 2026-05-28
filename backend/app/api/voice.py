@@ -96,6 +96,7 @@ async def upload_voice_recording(
     if lead_id:
         activity = Activity(
             lead_id=lead_id,
+            owner_id=current_user.id,
             activity_type="voice",
             subject="Call Recording Logged",
             body=file_id,

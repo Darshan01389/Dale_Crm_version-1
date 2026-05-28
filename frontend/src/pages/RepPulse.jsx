@@ -231,7 +231,7 @@ const RepPulse = () => {
   ];
 
   return (
-    <div style={{ height: '100%', overflowY: 'auto', background: 'var(--bg)', padding: 'var(--mobile-padding, 40px)' }} className="custom-scroll animate-in">
+    <div className="custom-scroll animate-in rep-pulse-container" style={{ height: '100%', overflowY: 'auto', background: 'var(--bg)' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
         
         {/* Header */}
@@ -240,10 +240,11 @@ const RepPulse = () => {
             <h1 className="text-h1" style={{ margin: 0 }}>My Pulse</h1>
             <p style={{ fontSize: 16, color: 'var(--text-muted)', marginTop: 8, fontWeight: 500 }}>Track your sales velocity and personal targets</p>
           </div>
-          <div style={{ display: 'flex', background: 'var(--bg-subtle)', padding: 6, borderRadius: 16, border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-sm)' }}>
+          <div className="period-selector" style={{ display: 'flex', background: 'var(--bg-subtle)', padding: 6, borderRadius: 16, border: '1px solid var(--border-subtle)', boxShadow: 'var(--shadow-sm)' }}>
             {PERIODS.map(p => (
               <button 
                 key={p.id}
+                className="period-btn"
                 onClick={() => setPeriod(p.id)}
                 style={{
                   padding: '10px 20px', borderRadius: 12, fontSize: 13, fontWeight: 700,
@@ -264,11 +265,11 @@ const RepPulse = () => {
         <JoinCodeWidget />
 
         {/* Top KPIs */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 24, marginBottom: 40 }}>
+        <div className="top-kpis-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 24, marginBottom: 40 }}>
           {stats.map(k => (
-            <div key={k.label} className="card" style={{ padding: 28 }}>
+            <div key={k.label} className="card pulse-card" style={{ padding: 28 }}>
               <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.05em', marginBottom: 20 }}>{k.label.toUpperCase()}</div>
-              <div style={{ fontSize: 36, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em' }}>{k.value}</div>
+              <div className="pulse-stat-val" style={{ fontSize: 36, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em' }}>{k.value}</div>
               <div style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 8, fontWeight: 500 }}>{k.sub}</div>
             </div>
           ))}
@@ -319,10 +320,10 @@ const RepPulse = () => {
         </div>
 
         {/* Win Probability Widget */}
-        <div className="card" style={{ padding: 32, border: '1px solid rgba(99, 102, 241, 0.2)', background: 'rgba(99, 102, 241, 0.05)' }}>
-          <div style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
+        <div className="card forecast-widget" style={{ padding: 32, border: '1px solid rgba(99, 102, 241, 0.2)', background: 'rgba(99, 102, 241, 0.05)' }}>
+          <div className="forecast-inner" style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
             <div style={{ 
-              width: 80, height: 80, borderRadius: 20, 
+              width: 80, height: 80, borderRadius: 20, flexShrink: 0,
               background: 'white', border: '1px solid rgba(99, 102, 241, 0.2)', 
               display: 'flex', alignItems: 'center', justifyContent: 'center', 
               fontSize: 22, fontWeight: 900, color: '#4338CA',
@@ -332,7 +333,7 @@ const RepPulse = () => {
               {data.model_accuracy_pct || 85}%
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <div className="forecast-header" style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                 <div style={{ padding: 6, background: 'white', borderRadius: 8, boxShadow: 'var(--shadow-sm)' }}>
                   <svg width="16" height="16" fill="var(--success)" viewBox="0 0 24 24"><path d="M12 2L3 7v10l9 5 9-5V7L12 2z"/></svg>
                 </div>
@@ -348,8 +349,18 @@ const RepPulse = () => {
 
       </div>
       <style>{`
+        .rep-pulse-container { padding: 40px; }
         @media (max-width: 768px) {
+          .rep-pulse-container { padding: 16px !important; }
           .middle-grid { grid-template-columns: 1fr !important; gap: 24px !important; }
+          .top-kpis-grid { grid-template-columns: 1fr !important; gap: 16px !important; }
+          .pulse-card { padding: 20px !important; }
+          .pulse-stat-val { font-size: 28px !important; }
+          .period-selector { flex-wrap: wrap; justify-content: center; width: 100%; gap: 4px; }
+          .period-btn { padding: 6px 10px !important; font-size: 11px !important; flex: 1; min-width: 70px; }
+          .forecast-widget { padding: 20px !important; }
+          .forecast-inner { flex-direction: column; text-align: center; gap: 16px !important; }
+          .forecast-header { justify-content: center; }
         }
       `}</style>
     </div>

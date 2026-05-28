@@ -49,14 +49,10 @@ const Header = () => {
   }, []);
 
   return (
-    <header style={{
-      height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '0 20px', borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)',
-      flexShrink: 0, position: 'relative', zIndex: 40,
-    }}>
+    <header className="header-container">
       {/* Left: page title */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <h1 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', margin: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, overflow: 'hidden' }}>
+        <h1 className="header-title">
           {title}
         </h1>
       </div>
@@ -65,52 +61,34 @@ const Header = () => {
       {/* Center: Search Trigger */}
       <div 
         onClick={() => setSearchOpen(true)}
-        style={{ 
-          position: 'relative', width: 320, cursor: 'pointer',
-          padding: '7px 12px 7px 34px', border: '1px solid var(--border)',
-          borderRadius: 8, fontSize: 13, background: 'var(--bg-subtle)', color: '#9CA3AF'
-        }}
+        className="header-search"
       >
-        <svg style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)' }}
-          width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+        <svg className="header-search-icon" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
           <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
         </svg>
-        Search leads, calls, messages...
-        <div style={{
-          position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
-          padding: '2px 6px', background: 'white', border: '1px solid var(--border)',
-          borderRadius: 4, fontSize: 10, fontWeight: 800
-        }}>⌘K</div>
+        <span className="header-search-text">Search leads, calls, messages...</span>
+        <div className="header-search-shortcut">⌘K</div>
       </div>
 
       {/* Right: notifications + profile */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div className="header-actions">
         <button
           onClick={() => setNotifOpen(true)}
-          style={{
-            position: 'relative', background: 'none', border: 'none', cursor: 'pointer',
-            padding: 8, borderRadius: 8, color: 'var(--text-muted)',
-          }}
+          className="header-notif-btn"
         >
           <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
           </svg>
-          <span style={{
-            position: 'absolute', top: 8, right: 8, width: 8, height: 8,
-            borderRadius: '50%', background: '#EF4444', border: '2px solid var(--bg-surface)',
-          }}/>
+          <span className="header-notif-badge"/>
         </button>
 
-        <div style={{ position: 'relative' }}>
+        <div className="profile-container">
           <button
             onClick={() => setProfileOpen(!profileOpen)}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
+            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
           >
-            <div style={{
-              width: 32, height: 32, borderRadius: '50%', background: 'var(--primary)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: 'white'
-            }}>
-              {profile.initials}
+            <div className="profile-avatar">
+              {profile?.name ? profile.name.charAt(0).toUpperCase() : 'U'}
             </div>
           </button>
           {profileOpen && (

@@ -39,7 +39,7 @@ class VoiceService:
             """
             
             body = {
-                "model": settings.CHAT_MODEL,
+                "model": settings.VOICE_MODEL,
                 "temperature": 0.2,
                 "response_format": {"type": "json_object"},
                 "messages": [
