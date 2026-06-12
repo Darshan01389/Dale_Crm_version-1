@@ -1,0 +1,63 @@
+# Node
+node_modules/
+dist/
+build/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.eslintcache
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Environments
+venv/
+.env
+.venv
+env.bak/
+venv.bak/
+
+# Database
+*.sqlite3
+*.db
+*.csv
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project specific exclusions
+merged_lead_dataset.csv
+ml_ready_lead_dataset.csv
+backend/whatsapp_gateway/.wwebjs_auth/
+backend/whatsapp_gateway/.wwebjs_cache/
