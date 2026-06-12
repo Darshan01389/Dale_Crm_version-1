@@ -1,4 +1,0 @@
-app/ml/artifacts/
-__pycache__/
-*.pyc
-.env
