@@ -53,9 +53,36 @@ const WalkthroughTour = () => {
       const currentRole = profile?.role || 'Sales Rep';
       localStorage.setItem(`tour_completed_${currentRole}`, 'true');
       setStepIndex(0);
-    } else if (type === EVENTS.STEP_AFTER || type === EVENTS.TARGET_NOT_FOUND) {
+    } else if (type === EVENTS.STEP_AFTER) {
       const nextStepIndex = index + (action === ACTIONS.PREV ? -1 : 1);
-      setStepIndex(nextStepIndex);
+      const nextStep = steps[nextStepIndex];
+
+      if (nextStep) {
+        if (nextStep.route && location.pathname !== nextStep.route) {
+          navigate(nextStep.route);
+        }
+
+        if (nextStep.target !== 'body') {
+          let attempts = 0;
+          const checkTarget = setInterval(() => {
+            attempts++;
+            if (document.querySelector(nextStep.target)) {
+              clearInterval(checkTarget);
+              setStepIndex(nextStepIndex);
+            } else if (attempts > 50) { // 5 seconds timeout
+              clearInterval(checkTarget);
+              setRun(false); // target not found after 5s, abort tour
+            }
+          }, 100);
+        } else {
+          setStepIndex(nextStepIndex);
+        }
+      } else {
+        setStepIndex(nextStepIndex);
+      }
+    } else if (type === EVENTS.TARGET_NOT_FOUND) {
+      // Abort tour gracefully instead of freezing
+      setRun(false);
     }
   };
 
