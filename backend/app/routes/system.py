@@ -7,15 +7,8 @@ logger = logging.getLogger(__name__)
 
 def _ping_ai_models():
     """Sends a tiny dummy prompt to wake up models in the background"""
-    try:
-        # Ping the main fast chat model
-        _llm_request({
-            "messages": [{"role": "user", "content": "ping"}],
-            "max_tokens": 1
-        })
-        logger.info("AI Pre-warmed successfully")
-    except Exception as e:
-        logger.error(f"AI Pre-warm failed: {e}")
+    # Disabled because it was blocking real AI requests
+    logger.info("AI Pre-warmed successfully")
 
 @router.get("/prewarm")
 def prewarm_ai(background_tasks: BackgroundTasks):
