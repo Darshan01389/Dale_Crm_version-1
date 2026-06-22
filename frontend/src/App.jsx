@@ -7,7 +7,6 @@ import MobileNav from './components/MobileNav';
 import OfflineBanner from './components/OfflineBanner';
 import { ToastProvider } from './contexts/ToastContext';
 import { PersonaProvider } from './contexts/PersonaContext';
-import WalkthroughTour from './components/WalkthroughTour';
 
 // Load Auth pages instantly
 import Login from './pages/Login';
@@ -124,7 +123,6 @@ const App = () => {
   <ToastProvider>
     <PersonaProvider>
       <OfflineBanner />
-      <WalkthroughTour />
       <Suspense fallback={<div style={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center' }}>Loading application...</div>}>
       <Routes>
         {/* Public */}

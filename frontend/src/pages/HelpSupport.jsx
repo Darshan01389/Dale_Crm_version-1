@@ -6,7 +6,6 @@ import { useTheme } from '../contexts/ThemeContext';
 const CARDS = [
   { icon: '💬', name: 'Chat with Support', desc: 'Avg response: 3 minutes', action: 'OPEN CHAT', href: 'mailto:supportaicrm@gmail.com' },
   { icon: '📚', name: 'Knowledge Base', desc: 'About Dale IQ, Community forums, and 120+ video tutorials', action: 'BROWSE', href: null, internal: '/community' },
-  { icon: '🚀', name: 'Onboarding Coach', desc: 'Re-run setup walkthrough', action: 'RESTART', href: null, onboard: true },
   { icon: '✉️', name: 'Email Support', desc: 'supportaicrm@gmail.com · 1-day response', action: 'EMAIL', href: 'mailto:supportaicrm@gmail.com' },
   { icon: '🐛', name: 'Report a Bug', desc: 'Help us fix it fast', action: 'REPORT', href: 'mailto:bugsaicrm@gmail.com' },
   { icon: '💡', name: 'Suggest a Feature', desc: 'Vote on the roadmap', action: 'SUBMIT', href: 'mailto:feedbackaicrm@gmail.com' },
@@ -62,7 +61,6 @@ const HelpSupport = () => {
   }, [theme, showChatbot]);
 
   const handleCard = (card) => {
-    if (card.onboard) { navigate('/welcome'); return; }
     if (card.internal) { navigate(card.internal); return; }
     if (card.name === 'Chat with Support') {
       setShowChatbot(true);
