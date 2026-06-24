@@ -33,6 +33,10 @@ class User(Base):
     max_active_leads = Column(Integer, default=50)
     current_active_leads = Column(Integer, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    admin_approval_status = Column(String, default="Approved") # "Pending", "Approved", "Rejected"
+    approval_request_time = Column(DateTime(timezone=True), nullable=True)
+    verification_code = Column(String(6), nullable=True)
+
 
     @property
     def is_super_admin(self) -> bool:

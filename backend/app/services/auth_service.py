@@ -7,6 +7,12 @@ from fastapi import HTTPException, status
 from app.models.user import User
 from app.schemas.user import UserRegister, UserLogin
 from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token
+from google.oauth2 import id_token
+from google.auth.transport import requests
+from app.core.config import settings
+import secrets
+from datetime import datetime, timezone, timedelta
+from sqlalchemy import func
 
 
 def register_user(db: Session, user_data: UserRegister) -> User:
@@ -51,10 +57,25 @@ def register_user(db: Session, user_data: UserRegister) -> User:
     # Step 2 — Hash the password (NEVER store plain text)
     hashed = hash_password(user_data.password)
 
-    # Force role to "Sales Rep" if requesting elevated role
+    # Force role logic
     assigned_role = user_data.role or "Sales Rep"
-    if assigned_role in ["Owner / Admin", "Sales Admin", "Developer", "developer", "admin", "admin/developers"]:
+    if assigned_role in ["Developer", "developer", "admin", "admin/developers"]:
         assigned_role = "Sales Rep"
+
+    admin_approval_status = "Approved"
+    approval_request_time = None
+    
+    if assigned_role in ["Owner / Admin", "Sales Admin"] and not team_id and not company_id:
+        admin_approval_status = "Pending"
+        approval_request_time = func.now()
+    elif team_id or company_id:
+        assigned_role = "Sales Rep"
+        admin_approval_status = "Approved"
+
+    # Generate 6-digit verification code
+    verification_code = None
+    if admin_approval_status == "Approved":
+        verification_code = str(secrets.randbelow(900000) + 100000)
 
     # Step 3 — Create the User object
     new_user = User(
@@ -63,7 +84,10 @@ def register_user(db: Session, user_data: UserRegister) -> User:
         password_hash=hashed,
         role=assigned_role,
         team_id=team_id,
-        company_id=company_id
+        company_id=company_id,
+        admin_approval_status=admin_approval_status,
+        approval_request_time=approval_request_time,
+        verification_code=verification_code
     )
 
     # Step 4 — Save to database
@@ -102,6 +126,45 @@ def login_user(db: Session, user_data: UserLogin) -> dict:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account is deactivated. Contact your admin."
+        )
+
+    # 1-Hour Timeout Logic for Pending Admins
+    if user.admin_approval_status == "Pending":
+        if user.approval_request_time:
+            # check if 1 hour has passed
+            time_diff = datetime.now(timezone.utc) - user.approval_request_time.replace(tzinfo=timezone.utc)
+            if time_diff > timedelta(hours=1):
+                user.admin_approval_status = "Expired"
+                user.role = "Sales Rep"
+                user.company_id = None
+                user.team_id = None
+                if not user.verification_code:
+                    user.verification_code = str(secrets.randbelow(900000) + 100000)
+                db.commit()
+                # Need to send email here but we will throw specific error so route handles it
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="EXPIRED_PENDING"
+                )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="PENDING_APPROVAL"
+                )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="PENDING_APPROVAL"
+            )
+
+    if user.admin_approval_status == "Rejected":
+        user.role = "Sales Rep"
+        user.company_id = None
+        user.team_id = None
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="REJECTED_APPROVAL"
         )
 
     # Check if email is verified
@@ -145,3 +208,96 @@ def get_user_by_id(db: Session, user_id: str) -> User:
             detail="User not found"
         )
     return user
+
+
+def google_sso_login(db: Session, token: str) -> dict:
+    """
+    Verifies Google ID token and logs the user in (or registers them).
+    """
+    try:
+        # Verify the token with Google
+        client_id = settings.GOOGLE_CLIENT_ID
+        if not client_id:
+            raise ValueError("GOOGLE_CLIENT_ID is not configured on the backend.")
+            
+        idinfo = id_token.verify_oauth2_token(token, requests.Request(), client_id)
+        
+        email = idinfo.get("email")
+        name = idinfo.get("name", email.split('@')[0])
+        
+        if not email:
+            raise ValueError("Google token did not contain an email address.")
+            
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid Google token: {str(e)}"
+        )
+
+    # Check if user already exists
+    user = db.query(User).filter(User.email == email).first()
+    
+    if user:
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Account is deactivated. Contact your admin."
+            )
+        # If they registered before via email, we can optionally mark email verified here
+        if not user.is_email_verified:
+            user.is_email_verified = True
+            db.commit()
+            
+    else:
+        # Create a new user account
+        hashed_pw = hash_password(secrets.token_urlsafe(32))
+        user = User(
+            name=name,
+            email=email,
+            password_hash=hashed_pw,
+            role="Sales Rep",  # Default role
+            is_email_verified=True, # Google already verified it
+            is_active=True
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        
+    # Generate tokens
+    token_data = {"sub": str(user.id)}
+    access_token = create_access_token(token_data)
+    refresh_token = create_refresh_token(token_data)
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "user": user
+    }
+
+def verify_email_code(db: Session, email: str, code: str) -> bool:
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.is_email_verified:
+        raise HTTPException(status_code=400, detail="Email already verified")
+    if user.verification_code != code:
+        raise HTTPException(status_code=400, detail="Invalid verification code")
+        
+    user.is_email_verified = True
+    user.verification_code = None
+    db.commit()
+    return True
+
+def resend_verification_code(db: Session, email: str) -> str:
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.is_email_verified:
+        raise HTTPException(status_code=400, detail="Email already verified")
+        
+    # Generate new code
+    new_code = str(secrets.randbelow(900000) + 100000)
+    user.verification_code = new_code
+    db.commit()
+    return new_code

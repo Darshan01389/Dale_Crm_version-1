@@ -129,8 +129,10 @@ from app.routes.automation import router as automation_router
 from app.routes.billing import router as billing_router
 from app.routes.system import router as system_router
 from app.routes.calendar import router as calendar_router
+from app.routes.superadmin import router as superadmin_router
 
 app.include_router(auth_router)
+app.include_router(superadmin_router)
 app.include_router(user_router)
 app.include_router(lead_router)
 app.include_router(voice_router)

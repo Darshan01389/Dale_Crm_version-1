@@ -54,6 +54,7 @@ class UserResponse(BaseModel):
     created_at: datetime
     is_super_admin: Optional[bool] = False
     is_company_admin: Optional[bool] = False
+    admin_approval_status: Optional[str] = "Approved"
 
     # This tells Pydantic to read data from SQLAlchemy objects
     # (not just plain dictionaries)
@@ -78,13 +79,25 @@ class ResetPasswordRequest(BaseModel):
     token: str
     new_password: str
 
-
 class UserProfileUpdate(BaseModel):
     name: Optional[str] = None
     whatsapp_number: Optional[str] = None
     company_email: Optional[str] = None
 
-
 class ChangePasswordRequest(BaseModel):
     old_password: str
-    new_password: str
+    new_password: str
+
+class GoogleLoginRequest(BaseModel):
+    token: str
+
+class RoleUpdateRequest(BaseModel):
+    role: str
+
+class EmailVerificationCodeRequest(BaseModel):
+    email: EmailStr
+    code: str
+
+class ResendCodeRequest(BaseModel):
+    email: EmailStr
+

@@ -74,6 +74,7 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: str = "http://localhost:5173"
     FRONTEND_URL: str = "http://localhost:5173"
     SENTRY_DSN: str | None = None
+    GOOGLE_CLIENT_ID: str | None = None
 
     @property
     def allowed_origins_list(self) -> list[str]:

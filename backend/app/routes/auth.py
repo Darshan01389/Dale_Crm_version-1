@@ -10,23 +10,19 @@ from app.core.dependencies import get_current_user
 from app.core.security import verify_token, create_access_token
 from app.schemas.user import (
     UserRegister, UserLogin, UserResponse, Token, RefreshTokenRequest,
-    ForgotPasswordRequest, ResetPasswordRequest, UserProfileUpdate, ChangePasswordRequest
+    ForgotPasswordRequest, ResetPasswordRequest, UserProfileUpdate, ChangePasswordRequest,
+    GoogleLoginRequest, EmailVerificationCodeRequest, ResendCodeRequest
 )
-from app.services.auth_service import register_user, login_user, get_user_by_id
+from app.services.auth_service import register_user, login_user, get_user_by_id, google_sso_login, verify_email_code, resend_verification_code
 from app.models.user import User
 
 # APIRouter groups related routes together
 # prefix means all routes here start with /auth
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
-def send_verification_bg(email: str, user_id: str):
-    from app.core.security import create_verification_token
+def send_verification_bg(email: str, code: str):
     from app.services.email_service import send_verification_email
-    from app.core.config import settings
-    
-    token = create_verification_token({"sub": str(user_id)})
-    verification_link = f"{settings.FRONTEND_URL}/verify-email?token={token}"
-    send_verification_email(email, verification_link)
+    send_verification_email(email, code)
 
 @router.post("/register", response_model=UserResponse, status_code=201)
 @limiter.limit("10/minute")
@@ -44,7 +40,15 @@ def register(
     - Fails if: email already exists
     """
     new_user = register_user(db, user_data)
-    background_tasks.add_task(send_verification_bg, new_user.email, new_user.id)
+    
+    if new_user.admin_approval_status == "Pending":
+        # Don't send verification email yet, they are pending approval
+        # We return a specific status code that the frontend can catch
+        raise HTTPException(status_code=202, detail="PENDING_APPROVAL")
+    
+    if new_user.verification_code:
+        background_tasks.add_task(send_verification_bg, new_user.email, new_user.verification_code)
+    
     return new_user
 
 
@@ -71,6 +75,25 @@ def login(
     """
     result = login_user(db, user_data)
 
+    return {
+        "access_token": result["access_token"],
+        "refresh_token": result["refresh_token"],
+        "token_type": "bearer"
+    }
+
+
+# ── GOOGLE SSO ────────────────────────────────────────────────────
+@router.post("/google", response_model=Token)
+@limiter.limit("10/minute")
+def google_login(
+    request: Request,
+    body: GoogleLoginRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Login or register via Google SSO ID token
+    """
+    result = google_sso_login(db, body.token)
     return {
         "access_token": result["access_token"],
         "refresh_token": result["refresh_token"],
@@ -217,34 +240,26 @@ def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
 
     return {"message": "Password has been reset successfully."}
 
-from pydantic import BaseModel
-
-class VerifyEmailRequest(BaseModel):
-    token: str
-
 @router.post("/verify-email")
-def verify_email(body: VerifyEmailRequest, db: Session = Depends(get_db)):
+def verify_email(body: EmailVerificationCodeRequest, db: Session = Depends(get_db)):
     """
-    Verifies a user email using verification token.
+    Verifies a user email using 6-digit verification code.
     """
-    user_id = verify_token(body.token, token_type="verification")
-    if not user_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired verification token."
-        )
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found."
-        )
-    if user.is_email_verified:
-        return {"message": "Email is already verified."}
-        
-    user.is_email_verified = True
-    db.commit()
+    verify_email_code(db, body.email, body.code)
     return {"message": "Email verified successfully."}
+
+@router.post("/resend-verification")
+def resend_verification(
+    body: ResendCodeRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    """
+    Resends a new 6-digit verification code.
+    """
+    new_code = resend_verification_code(db, body.email)
+    background_tasks.add_task(send_verification_bg, body.email, new_code)
+    return {"message": "A new verification code has been sent."}
 
 
 @router.patch("/me", response_model=UserResponse)

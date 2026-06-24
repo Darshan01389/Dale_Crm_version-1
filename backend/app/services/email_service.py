@@ -70,12 +70,12 @@ def send_password_reset_email(to_email: str, reset_link: str) -> bool:
     """
     return send_email(to_email, subject, body_html, body_text)
 
-def send_verification_email(to_email: str, verification_link: str) -> bool:
+def send_verification_email(to_email: str, verification_code: str) -> bool:
     """
-    Helper to send a verification link to user email.
+    Helper to send a 6-digit verification code to user email.
     """
     subject = "Verify Your DaleIQ Account"
-    body_text = f"Hello,\n\nPlease verify your email address by clicking on the link below:\n{verification_link}\n\nThis link is valid for 24 hours."
+    body_text = f"Hello,\n\nPlease verify your email address by entering the following 6-digit code in the application:\n\n{verification_code}\n\nThis code is valid for 24 hours."
     
     body_html = f"""
     <html>
@@ -83,14 +83,13 @@ def send_verification_email(to_email: str, verification_link: str) -> bool:
         <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
           <h2 style="color: #4F46E5; text-align: center;">Verify Your Email Address</h2>
           <p>Hello,</p>
-          <p>Thank you for registering. Please click the button below to verify your email address:</p>
+          <p>Thank you for registering. Please enter the following 6-digit code to verify your email address:</p>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="{verification_link}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Verify Email</a>
+            <div style="background-color: #F3F4F6; border: 2px dashed #4F46E5; color: #4F46E5; padding: 15px 30px; border-radius: 6px; font-weight: bold; font-size: 24px; letter-spacing: 5px; display: inline-block;">
+              {verification_code}
+            </div>
           </div>
-          <p>This link is valid for 24 hours.</p>
-          <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-          <p style="font-size: 12px; color: #888;">If the button above does not work, copy and paste this URL into your browser:</p>
-          <p style="font-size: 12px; color: #4F46E5; word-break: break-all;">{verification_link}</p>
+          <p>This code is valid for 24 hours. Do not share it with anyone.</p>
         </div>
       </body>
     </html>
