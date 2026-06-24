@@ -74,7 +74,7 @@ class Settings(BaseSettings):
     RAZORPAY_UPI_VPA: str | None = None
 
     # CORS & Frontend URLs
-    ALLOWED_ORIGINS: str = "http://localhost:5173"
+    ALLOWED_ORIGINS: str = "http://localhost:5173,https://dale-crm-version-1.vercel.app"
     FRONTEND_URL: str = "http://localhost:5173"
     SENTRY_DSN: str | None = None
     GOOGLE_CLIENT_ID: str | None = None

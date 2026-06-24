@@ -216,7 +216,7 @@ const OrgSettings = () => {
                 COMPANY ONBOARDING QR CODE
               </span>
               <p style={{ fontSize: 10, color: 'var(--text-muted)', margin: '6px 0 0', maxWidth: 220, lineHeight: 1.4 }}>
-                💡 <strong>Mobile Scanning:</strong> Connect phone to same Wi-Fi and open the CRM via local IP (e.g. <code>http://192.168.x.x:5173</code>) instead of localhost to generate scan-ready codes.
+                💡 <strong>Mobile Scanning:</strong> Scan this code with a mobile device to immediately open the registration page with the workspace join code pre-filled.
               </p>
             </div>
           </div>
