@@ -8,33 +8,39 @@ const VerifyEmail = () => {
   const token = searchParams.get('token');
   const navigate = useNavigate();
 
-  const [status, setStatus] = useState('verifying'); // 'verifying' | 'success' | 'error'
+  const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [status, setStatus] = useState('idle'); // 'idle' | 'verifying' | 'success' | 'error'
   const [errorMsg, setErrorMsg] = useState('');
 
-  useEffect(() => {
-    const performVerification = async () => {
-      if (!token) {
-        setStatus('error');
-        setErrorMsg('Verification token is missing from URL.');
-        return;
-      }
+  const handleVerify = async (e) => {
+    e.preventDefault();
+    setStatus('verifying');
+    setErrorMsg('');
 
-      try {
-        await axios.post('/api/auth/verify-email', { token });
-        setStatus('success');
-        // Auto-redirect to login after 3 seconds
-        setTimeout(() => {
-          navigate('/login');
-        }, 3000);
-      } catch (err) {
-        console.error(err);
-        setStatus('error');
-        setErrorMsg(err.response?.data?.detail || 'Verification failed. The token may have expired or is invalid.');
-      }
-    };
+    try {
+      await axios.post('/api/auth/verify-email', { email, code });
+      setStatus('success');
+      setTimeout(() => navigate('/login'), 3000);
+    } catch (err) {
+      console.error(err);
+      setStatus('error');
+      setErrorMsg(err.response?.data?.detail || 'Verification failed. The code may have expired or is invalid.');
+    }
+  };
 
-    performVerification();
-  }, [token, navigate]);
+  const handleResend = async () => {
+    if (!email) {
+      setErrorMsg('Please enter your email first to resend the code.');
+      return;
+    }
+    try {
+      await axios.post('/api/auth/resend-verification', { email });
+      alert('A new 6-digit code has been sent to your email.');
+    } catch (err) {
+      setErrorMsg(err.response?.data?.detail || 'Failed to resend code.');
+    }
+  };
 
   return (
     <div style={{
@@ -60,7 +66,55 @@ const VerifyEmail = () => {
         </div>
 
         <div className="card glass" style={{ padding: 40, borderRadius: 24, textAlign: 'center' }}>
-          {status === 'verifying' && (
+          {status === 'idle' || status === 'error' ? (
+            <form onSubmit={handleVerify} style={{ display: 'flex', flexDirection: 'column', gap: 16, textAlign: 'left' }}>
+              {status === 'error' && (
+                <div style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', padding: '10px 14px', borderRadius: 8, fontSize: 14 }}>
+                  {errorMsg}
+                </div>
+              )}
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  required
+                  placeholder="you@company.com"
+                  className="input"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  6-Digit Verification Code
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="123456"
+                  className="input"
+                  maxLength={6}
+                  style={{ fontSize: 24, letterSpacing: '8px', textAlign: 'center', height: 60 }}
+                  value={code}
+                  onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
+                />
+              </div>
+              <button type="submit" className="btn-primary" style={{ height: 48, marginTop: 10 }}>
+                Verify Account
+              </button>
+              
+              <div style={{ textAlign: 'center', marginTop: 10 }}>
+                <button type="button" onClick={handleResend} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: 14, fontWeight: 600 }}>
+                  Resend Code
+                </button>
+              </div>
+              <div style={{ textAlign: 'center', marginTop: 10 }}>
+                 <Link to="/login" style={{ color: 'var(--text-muted)', fontSize: 14, textDecoration: 'none' }}>Back to Login</Link>
+              </div>
+            </form>
+          ) : status === 'verifying' ? (
             <>
               <div className="spinner" style={{ 
                 width: 40, height: 40, 
@@ -72,12 +126,10 @@ const VerifyEmail = () => {
               }} />
               <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>Verifying Email...</h2>
               <p style={{ fontSize: 14, color: 'var(--text-muted)' }}>
-                Please wait while we verify your credentials.
+                Please wait while we check your code.
               </p>
             </>
-          )}
-
-          {status === 'success' && (
+          ) : (
             <>
               <div style={{ fontSize: 48, marginBottom: 20 }}>🎉</div>
               <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>Email Verified!</h2>
@@ -86,19 +138,6 @@ const VerifyEmail = () => {
               </p>
               <Link to="/login" className="btn-primary" style={{ width: '100%', textDecoration: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 Proceed to Login
-              </Link>
-            </>
-          )}
-
-          {status === 'error' && (
-            <>
-              <div style={{ fontSize: 48, marginBottom: 20 }}>❌</div>
-              <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>Verification Failed</h2>
-              <p style={{ fontSize: 14, color: 'var(--danger)', lineHeight: 1.6, marginBottom: 24 }}>
-                {errorMsg}
-              </p>
-              <Link to="/login" className="btn-secondary" style={{ width: '100%', textDecoration: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                Back to Login
               </Link>
             </>
           )}

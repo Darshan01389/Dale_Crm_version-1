@@ -86,8 +86,20 @@ const SuperAdminOverview = () => {
   const [companies, setCompanies] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [pendingApprovals, setPendingApprovals] = useState([]);
 
   const token = sessionStorage.getItem('voiceiq_token') || localStorage.getItem('voiceiq_token');
+
+  const fetchApprovals = async () => {
+    try {
+      const res = await fetch('/api/superadmin/approvals/pending', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (res.ok) {
+        setPendingApprovals(await res.json());
+      }
+    } catch (err) {
+      console.error('Failed to fetch pending approvals:', err);
+    }
+  };
 
   useEffect(() => {
     if (!profile?.isSuperAdmin) {
@@ -119,7 +131,32 @@ const SuperAdminOverview = () => {
     };
 
     fetchData();
+    fetchApprovals();
   }, [profile, token, navigate]);
+
+  const handleApprove = async (userId) => {
+    try {
+      const res = await fetch(`/api/superadmin/approvals/${userId}/approve`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) fetchApprovals();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleReject = async (userId) => {
+    try {
+      const res = await fetch(`/api/superadmin/approvals/${userId}/reject`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) fetchApprovals();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleViewCompany = (company) => {
     setSelectedCompanyId(company.id);
@@ -176,6 +213,44 @@ const SuperAdminOverview = () => {
               sub="Currently active"
             />
           </div>
+
+          {/* Pending Approvals Section */}
+          {pendingApprovals.length > 0 && (
+            <div style={{ marginBottom: 32 }}>
+              <h3 style={{ margin: '0 0 16px', fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>
+                Pending Admin Approvals
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {pendingApprovals.map(user => (
+                  <div key={user.id} style={{
+                    padding: '16px 20px', borderRadius: 12, background: 'var(--bg-surface)', border: '1px solid var(--warning)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+                  }}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{user.name}</div>
+                      <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{user.email} • Requested Role: {user.role}</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button 
+                        onClick={() => handleApprove(user.id)}
+                        className="btn-primary" 
+                        style={{ padding: '6px 12px', fontSize: 12, height: 'auto', minHeight: 32 }}
+                      >
+                        Approve
+                      </button>
+                      <button 
+                        onClick={() => handleReject(user.id)}
+                        className="btn-secondary" 
+                        style={{ padding: '6px 12px', fontSize: 12, height: 'auto', minHeight: 32 }}
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Companies List */}
           <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

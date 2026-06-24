@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AnimatedBackground from '../components/AnimatedBackground';
+import { GoogleLogin } from '@react-oauth/google';
+import { useUser } from '../contexts/UserContext';
 
 const Register = () => {
   const navigate = useNavigate();
+  const { updateProfile } = useUser();
   const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'Sales Rep', invite_code: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [pendingApproval, setPendingApproval] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
@@ -17,6 +21,57 @@ const Register = () => {
       setFormData(prev => ({ ...prev, invite_code: code }));
     }
   }, []);
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: credentialResponse.credential }),
+      });
+
+      let data;
+      const ct = response.headers.get('content-type');
+      if (ct && ct.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        throw new Error(text || `Server error (${response.status})`);
+      }
+
+      if (!response.ok) throw new Error(data.detail || 'Google Login failed');
+
+      // Store tokens
+      sessionStorage.setItem('voiceiq_token', data.access_token);
+      sessionStorage.setItem('voiceiq_refresh_token', data.refresh_token);
+      localStorage.setItem('voiceiq_token', data.access_token);
+      localStorage.setItem('voiceiq_refresh_token', data.refresh_token);
+
+      // Fetch user profile info
+      const profileResponse = await fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${data.access_token}`
+        }
+      });
+
+      if (profileResponse.ok) {
+        const profileData = await profileResponse.json();
+        updateProfile({
+          name: profileData.name,
+          email: profileData.email,
+          role: profileData.role || 'Sales Rep'
+        });
+      }
+
+      navigate('/');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,10 +94,14 @@ const Register = () => {
         throw new Error(text || `Server error (${response.status})`);
       }
 
-      if (!response.ok) throw new Error(data.detail || 'Registration failed');
+      if (!response.ok && response.status !== 202) throw new Error(data.detail || 'Registration failed');
 
-      setSuccess(true);
-      setTimeout(() => navigate('/login'), 2000);
+      if (response.status === 202) {
+        setPendingApproval(true);
+      } else {
+        setSuccess(true);
+        setTimeout(() => navigate('/login'), 2000);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -89,7 +148,26 @@ const Register = () => {
         </div>
 
         <div className="card glass" style={{ padding: 40, borderRadius: 24 }}>
-          {success ? (
+          {pendingApproval ? (
+            <div style={{ textAlign: 'center', padding: '20px 0' }}>
+              <div style={{ width: 64, height: 64, borderRadius: 32, background: 'rgba(245, 158, 11, 0.1)', color: '#F59E0B', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
+                <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h2 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>Registration Under Review</h2>
+              <p style={{ color: 'var(--text-muted)', fontSize: 15, lineHeight: 1.6 }}>
+                This manual confirmation may take up to 30 minutes. Please return back in 30 minutes. Once approved, you will receive an email verification code.
+              </p>
+              <button 
+                onClick={() => navigate('/login')} 
+                className="btn-primary" 
+                style={{ marginTop: 24, width: '100%' }}
+              >
+                Return to Login
+              </button>
+            </div>
+          ) : success ? (
             <div style={{ textAlign: 'center', padding: '20px 0' }}>
               <div style={{ width: 64, height: 64, borderRadius: 32, background: 'rgba(99, 102, 241, 0.1)', color: '#6366F1', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 20 }}>
                 <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
@@ -145,9 +223,10 @@ const Register = () => {
                       <option value="Sales Rep">Sales Rep</option>
                       <option value="Team Lead">Team Lead</option>
                       <option value="Manager">Manager</option>
+                      <option value="Owner / Admin">Owner / Admin</option>
                     </select>
                     <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', marginTop: 4 }}>
-                      Owner / Admin roles must be assigned by your Admin.
+                      Owner / Admin roles require manual approval.
                     </span>
                   </div>
                 </div>
@@ -248,6 +327,23 @@ const Register = () => {
                   )}
                 </button>
               </form>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '20px 0' }}>
+                <div style={{ flex: 1, height: 1, background: 'var(--border)', opacity: 0.4 }}/>
+                <span style={{ fontSize: 10, color: 'var(--text-micro)', fontWeight: 600 }}>OR</span>
+                <div style={{ flex: 1, height: 1, background: 'var(--border)', opacity: 0.4 }}/>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={() => setError('Google signup failed')}
+                  useOneTap
+                  theme="filled_blue"
+                  shape="rectangular"
+                  text="signup_with"
+                />
+              </div>
             </>
           )}
         </div>

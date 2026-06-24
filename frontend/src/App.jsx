@@ -5,6 +5,7 @@ import Header from './components/Header';
 import { useUser } from './contexts/UserContext';
 import MobileNav from './components/MobileNav';
 import OfflineBanner from './components/OfflineBanner';
+import RoleUpgradeModal from './components/RoleUpgradeModal';
 import { ToastProvider } from './contexts/ToastContext';
 import { PersonaProvider } from './contexts/PersonaContext';
 
@@ -123,6 +124,7 @@ const App = () => {
   <ToastProvider>
     <PersonaProvider>
       <OfflineBanner />
+      <RoleUpgradeModal />
       <Suspense fallback={<div style={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center' }}>Loading application...</div>}>
       <Routes>
         {/* Public */}

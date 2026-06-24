@@ -7,6 +7,7 @@ const TeamManagement = () => {
   const { show } = useToast();
   const { profile } = useUser();
   const isManager = profile?.role === 'Team Lead' || profile?.role === 'Manager';
+  const isOwner = profile?.role === 'Owner / Admin' || profile?.isSuperAdmin;
   const [teams, setTeams] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -110,6 +111,19 @@ const TeamManagement = () => {
       console.error(err);
       const errMsg = err.response?.data?.detail || 'Failed to remove member.';
       show({ type: 'error', message: errMsg });
+    }
+  };
+
+  const handleRoleChange = async (userId, newRole) => {
+    try {
+      const token = localStorage.getItem('voiceiq_token');
+      await axios.patch(`/api/users/${userId}/role`, { role: newRole }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      show({ type: 'success', message: `Role updated to ${newRole}` });
+      fetchData();
+    } catch (err) {
+      show({ type: 'error', message: err.response?.data?.detail || 'Failed to update role.' });
     }
   };
 
@@ -229,7 +243,23 @@ const TeamManagement = () => {
                       {member.name[0]}
                     </div>
                     <div style={{ flex: 1, fontSize: 13, fontWeight: 600 }}>{member.name}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{member.role === 'Team Lead' ? 'Manager' : 'Sales'}</div>
+                    
+                    {isOwner && member.id !== profile?.id ? (
+                      <select 
+                        className="input"
+                        style={{ width: 130, height: 28, fontSize: 11, padding: '0 8px' }}
+                        value={member.role || 'Sales Rep'}
+                        onChange={(e) => handleRoleChange(member.id, e.target.value)}
+                      >
+                        <option value="Sales Rep">Sales Rep</option>
+                        <option value="Team Lead">Team Lead</option>
+                        <option value="Manager">Manager</option>
+                        <option value="Owner / Admin">Owner / Admin</option>
+                      </select>
+                    ) : (
+                      <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{member.role || 'Sales Rep'}</div>
+                    )}
+                    
                     {member.id !== profile?.id && (
                       <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
                         <button 

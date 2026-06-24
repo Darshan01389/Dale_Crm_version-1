@@ -45,6 +45,7 @@ export const UserProvider = ({ children }) => {
   // Super Admin context: when Super Admin selects a company to view,
   // selectedCompanyId holds that company's ID (null = viewing all companies)
   const [selectedCompanyId, setSelectedCompanyId] = useState(null);
+  const [showRoleUpgradeModal, setShowRoleUpgradeModal] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -58,6 +59,12 @@ export const UserProvider = ({ children }) => {
         if (response.ok) {
           const data = await response.json();
           setProfile(prev => {
+            // Check for role upgrade
+            if (prev.email !== 'darshan@voiceiq.ai' && prev.role && data.role && prev.role !== data.role && !prev.isSuperAdmin) {
+               // Only trigger modal if not initial default profile load
+               setShowRoleUpgradeModal(true);
+            }
+            
             const isSuperAdmin = data.email === 'daleaicrm@gmail.com' || data.is_super_admin === true;
             const next = {
               ...prev,
@@ -77,7 +84,12 @@ export const UserProvider = ({ children }) => {
         console.error('Failed to sync profile:', err);
       }
     };
+    
     fetchProfile();
+    
+    // Poll every 60 seconds
+    const interval = setInterval(fetchProfile, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   const updateProfile = async (updates) => {
@@ -136,6 +148,8 @@ export const UserProvider = ({ children }) => {
       logout,
       selectedCompanyId,
       setSelectedCompanyId,
+      showRoleUpgradeModal,
+      setShowRoleUpgradeModal,
     }}>
       {children}
     </UserContext.Provider>
