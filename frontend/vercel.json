@@ -1,0 +1,8 @@
+{
+    "rewrites": [
+        {
+            "source": "/api/:path*",
+            "destination": "https://dalecrmversion-1-production.up.railway.app/:path*"
+        }
+    ]
+}
