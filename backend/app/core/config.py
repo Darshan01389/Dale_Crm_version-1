@@ -55,6 +55,9 @@ class Settings(BaseSettings):
     SMTP_USER: str | None = None
     SMTP_PASSWORD: str | None = None
     SMTP_FROM: str | None = None
+    SMTP_VERIFY_USER: str | None = None
+    SMTP_VERIFY_PASSWORD: str | None = None
+    SMTP_VERIFY_FROM: str | None = None
     ALERT_EMAIL_TO: str | None = None
     
     # Global AI Toggle

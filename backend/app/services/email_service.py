@@ -3,13 +3,17 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from app.core.config import settings
 
-def send_email(to_email: str, subject: str, body_html: str, body_text: str = "") -> bool:
+def send_email(to_email: str, subject: str, body_html: str, body_text: str = "", custom_user: str = None, custom_password: str = None, custom_from: str = None) -> bool:
     """
     Sends an email using the SMTP settings from the configuration.
     Returns True if successful, False otherwise.
     Does not crash the request flow if SMTP configuration is missing or errors out.
     """
-    if not settings.SMTP_HOST or not settings.SMTP_USER or not settings.SMTP_PASSWORD:
+    smtp_user = custom_user or settings.SMTP_USER
+    smtp_pass = custom_password or settings.SMTP_PASSWORD
+    smtp_from = custom_from or settings.SMTP_FROM or smtp_user
+
+    if not settings.SMTP_HOST or not smtp_user or not smtp_pass:
         print("[Email Service] SMTP configuration is incomplete. Skipping email sending.")
         print(f"[Email Service Mock] To: {to_email} | Subject: {subject}")
         print(f"[Email Service Mock] Plain Text Body: {body_text or body_html}")
@@ -18,7 +22,7 @@ def send_email(to_email: str, subject: str, body_html: str, body_text: str = "")
     try:
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
-        msg["From"] = settings.SMTP_FROM or settings.SMTP_USER
+        msg["From"] = smtp_from
         msg["To"] = to_email
 
         if body_text:
@@ -34,7 +38,7 @@ def send_email(to_email: str, subject: str, body_html: str, body_text: str = "")
             server.starttls()
             server.ehlo()
         
-        server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+        server.login(smtp_user, smtp_pass)
         server.sendmail(msg["From"], [to_email], msg.as_string())
         server.close()
         print(f"[Email Service] Email successfully sent to {to_email}")
@@ -94,4 +98,12 @@ def send_verification_email(to_email: str, verification_code: str) -> bool:
       </body>
     </html>
     """
-    return send_email(to_email, subject, body_html, body_text)
+    return send_email(
+        to_email=to_email,
+        subject=subject,
+        body_html=body_html,
+        body_text=body_text,
+        custom_user=settings.SMTP_VERIFY_USER,
+        custom_password=settings.SMTP_VERIFY_PASSWORD,
+        custom_from=settings.SMTP_VERIFY_FROM
+    )
