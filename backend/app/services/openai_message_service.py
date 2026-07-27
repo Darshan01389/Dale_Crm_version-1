@@ -100,6 +100,12 @@ def generate_whatsapp_message(
         )
 
 def generate_ai_summary(lead, activities, voice_recordings, use_strategy: bool = True) -> str:
+    status_lower = (lead.status or "").lower()
+    if "won" in status_lower:
+        return "Deal is successfully closed and won. Suggested next step: Initiate customer onboarding and handoff to customer success."
+    elif "lost" in status_lower:
+        return "Deal is closed and lost. Suggested next step: Log loss reason and set a reminder to re-engage in 6 months."
+
     if not settings.USE_OLLAMA_FOR_ALL:
         return "Deal is progressing. Suggested next step: Follow up with prospect."
 
@@ -140,6 +146,22 @@ def generate_ai_summary(lead, activities, voice_recordings, use_strategy: bool =
         return "Deal is progressing. Suggested next step: Follow up with prospect."
 
 def ai_suggest_reply(lead, activities, voice_recordings, channel="whatsapp", use_strategy: bool = False) -> dict:
+    status_lower = (lead.status or "").lower()
+    if "won" in status_lower:
+        res = {
+            "draft": f"Hi {lead.title},\n\nThank you again for partnering with us! We have successfully set up your account. Onboarding details have been shared, and our team is looking forward to working with you. Let me know if you have any questions!"
+        }
+        if channel == "email":
+            res["subject"] = f"Welcome to DaleIQ - Onboarding Details for {lead.title}"
+        return res
+    elif "lost" in status_lower:
+        res = {
+            "draft": f"Hi {lead.title},\n\nThank you for your time during our evaluation process. I completely understand your decision. If anything changes in the future, please feel free to reach out."
+        }
+        if channel == "email":
+            res["subject"] = f"Thank you from DaleIQ - {lead.title}"
+        return res
+
     if not settings.USE_OLLAMA_FOR_ALL:
         res = {"draft": f"Hi {lead.title},\n\nFollowing up on our recent conversation via {channel}. How would you like to proceed?"}
         if channel == "email":

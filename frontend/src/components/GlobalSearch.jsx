@@ -3,16 +3,16 @@ import { useNavigate } from 'react-router-dom';
 
 const MOCK_RESULTS = {
   contacts: [
-    { id: '1', name: 'Sarah Jenkins', sub: 'TechFlow Inc · Procurement', type: 'contact' },
-    { id: '2', name: 'Michael Chen', sub: 'Initech Pvt · Director', type: 'contact' },
+    { id: '1', name: 'Savithri Devi', sub: 'TechFlow Inc · Procurement', type: 'contact' },
+    { id: '2', name: 'Mohan Kumar', sub: 'Initech Pvt · Director', type: 'contact' },
   ],
   deals: [
     { id: 'd1', name: 'TechFlow Enterprise', sub: '₹12.5L · Negotiation', type: 'deal' },
     { id: 'd2', name: 'Initech CRM Sync', sub: '₹8.0L · Proposal', type: 'deal' },
   ],
   conversations: [
-    { id: 'c1', name: 'WhatsApp with Sarah', sub: '“Can you send the PDF by EOD?”', type: 'chat' },
-    { id: 'c2', name: 'Call with Michael', sub: 'Call: 12min — signals: budget approved', type: 'voice' },
+    { id: 'c1', name: 'WhatsApp with Savithri', sub: '“Can you send the PDF by EOD?”', type: 'chat' },
+    { id: 'c2', name: 'Call with Mohan', sub: 'Call: 12min — signals: budget approved', type: 'voice' },
   ]
 };
 

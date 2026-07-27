@@ -16,10 +16,10 @@ def update_demo_users():
     db = SessionLocal()
     try:
         from app.models.company import Company
-        company = db.query(Company).first()
+        company = db.query(Company).filter(Company.name == "Demo Environment").first()
         if not company:
-            print("Creating default company: Acme Corporation")
-            company = Company(name="Acme Corporation", industry="Technology", join_code="111111")
+            print("Creating default company: Demo Environment")
+            company = Company(name="Demo Environment", industry="Software", join_code="111111")
             db.add(company)
             db.commit()
             db.refresh(company)

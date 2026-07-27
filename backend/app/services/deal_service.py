@@ -70,6 +70,21 @@ def _ensure_deal_owner(deal: Deal | None, user: User) -> Deal:
 
 def serialize_deal(d: Deal) -> DealResponse:
     stage = d.stage
+    
+    intent = "unknown"
+    lead_name = None
+    if getattr(d, 'lead', None):
+        lead_name = d.lead.title
+        il = (d.lead.intent_level or "").lower()
+        if "high" in il:
+            intent = "high"
+        elif "risk" in il or d.lead.risk_flag:
+            intent = "risk"
+        elif "medium" in il or "low" in il or "standard" in il:
+            intent = "standard"
+        elif d.lead.ai_score and d.lead.ai_score > 80:
+            intent = "high"
+
     return DealResponse(
         id=d.id,
         owner_id=d.owner_id,
@@ -87,6 +102,8 @@ def serialize_deal(d: Deal) -> DealResponse:
         notes=d.notes,
         created_at=d.created_at,
         updated_at=d.updated_at,
+        intent=intent,
+        lead_name=lead_name,
     )
 
 
@@ -112,7 +129,7 @@ def create_deal(db: Session, user: User, data: DealCreate) -> DealResponse:
     db.refresh(row)
     d = (
         db.query(Deal)
-        .options(joinedload(Deal.stage))
+        .options(joinedload(Deal.stage), joinedload(Deal.lead))
         .filter(Deal.id == row.id)
         .first()
     )
@@ -128,7 +145,7 @@ def list_deals(
     limit: int = 50,
     company_id: int | None = None,
 ) -> list[DealResponse]:
-    q = db.query(Deal).options(joinedload(Deal.stage))
+    q = db.query(Deal).options(joinedload(Deal.stage), joinedload(Deal.lead))
     
     # If the user is a normal company user, enforce that company_id is exactly user.company_id
     if not user.is_super_admin:
@@ -159,7 +176,7 @@ def list_deals(
 def get_deal(db: Session, deal_id: UUID, user: User) -> DealResponse:
     d = (
         db.query(Deal)
-        .options(joinedload(Deal.stage))
+        .options(joinedload(Deal.stage), joinedload(Deal.lead))
         .filter(Deal.id == deal_id)
         .first()
     )
@@ -175,7 +192,7 @@ def update_deal(
 ) -> DealResponse:
     d = (
         db.query(Deal)
-        .options(joinedload(Deal.stage))
+        .options(joinedload(Deal.stage), joinedload(Deal.lead))
         .filter(Deal.id == deal_id)
         .first()
     )
@@ -197,7 +214,7 @@ def update_deal(
     db.refresh(d)
     d = (
         db.query(Deal)
-        .options(joinedload(Deal.stage))
+        .options(joinedload(Deal.stage), joinedload(Deal.lead))
         .filter(Deal.id == d.id)
         .first()
     )

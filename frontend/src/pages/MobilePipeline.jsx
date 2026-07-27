@@ -6,7 +6,7 @@ import AddContactModal from '../components/AddContactModal';
 const STAGE_ORDER = ['New', 'Contacted', 'Proposal', 'Negotiation', 'Closed-Won'];
 
 const DEALS = [
-  { id: '1', name: 'Sarah Jenkins',  stage: 'Proposal',     value: '₹4.5L', intent: 'hot',  contactId: '1' },
+  { id: '1', name: 'Savithri Devi',  stage: 'Proposal',     value: '₹4.5L', intent: 'hot',  contactId: '1' },
   { id: '2', name: 'Vikram Nair',    stage: 'Negotiation',  value: '₹8.0L', intent: 'hot',  contactId: '8' },
   { id: '3', name: 'Priya Sharma',   stage: 'Contacted',    value: '₹2.1L', intent: 'risk', contactId: '2' },
   { id: '4', name: 'Rajesh Kumar',   stage: 'New',          value: '₹1.8L', intent: 'std',  contactId: '4' },

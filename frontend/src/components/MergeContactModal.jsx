@@ -16,14 +16,14 @@ const MergeContactModal = ({ isOpen, onClose, contact1, contact2 }) => {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 32 }}>
           <div style={{ border: '1px solid var(--primary)', borderRadius: 12, padding: 16, background: 'rgba(99, 102, 241, 0.05)' }}>
             <h4 style={{ margin: '0 0 16px', color: 'var(--primary)' }}>Master Record (Keep)</h4>
-            <p><strong>Name:</strong> {contact1?.name || 'Sarah Jenkins'}</p>
+            <p><strong>Name:</strong> {contact1?.name || 'Savithri Devi'}</p>
             <p><strong>Phone:</strong> {contact1?.phone || '+91 98765 43210'}</p>
-            <p><strong>Email:</strong> {contact1?.email || 'sarah@techflow.in'}</p>
+            <p><strong>Email:</strong> {contact1?.email || 'savithri@techflow.in'}</p>
             <p><strong>Owner:</strong> Ravi Kumar</p>
           </div>
           <div style={{ border: '1px solid var(--border)', borderRadius: 12, padding: 16, opacity: 0.7 }}>
             <h4 style={{ margin: '0 0 16px', color: 'var(--text-muted)' }}>Duplicate (Merge & Delete)</h4>
-            <p><strong>Name:</strong> S. Jenkins</p>
+            <p><strong>Name:</strong> S. Devi</p>
             <p><strong>Phone:</strong> {contact1?.phone || '+91 98765 43210'}</p>
             <p><strong>Email:</strong> No email</p>
             <p><strong>Owner:</strong> Unassigned</p>

@@ -45,5 +45,7 @@ class DealResponse(BaseModel):
     notes: str | None
     created_at: datetime
     updated_at: datetime
+    intent: str | None = None
+    lead_name: str | None = None
 
     model_config = ConfigDict(from_attributes=True)

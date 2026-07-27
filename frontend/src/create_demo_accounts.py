@@ -10,9 +10,9 @@ db_url = "postgresql://postgres:Jayanth_123@localhost:5432/voiceiq"
 engine = create_engine(db_url)
 
 users = [
-    ("sarah.rep@daleiq.com", "Sales Rep", "Sarah Jenkins"),
-    ("mike.manager@daleiq.com", "Team Lead", "Mike Ross"),
-    ("david.admin@daleiq.com", "Owner / Admin", "David Dale")
+    ("savithri.rep@daleiq.com", "Sales Rep", "Savithri Devi"),
+    ("mohan.manager@daleiq.com", "Team Lead", "Mohan Kumar"),
+    ("arjun.admin@daleiq.com", "Owner / Admin", "Arjun Singh")
 ]
 
 password = "password123"
@@ -32,6 +32,6 @@ with engine.connect() as conn:
     conn.commit()
 
 print("Demo accounts created successfully!")
-print("1. Sarah Rep (Sales Rep) - sarah.rep@daleiq.com / password123")
-print("2. Mike Manager (Team Lead) - mike.manager@daleiq.com / password123")
-print("3. David Admin (Owner / Admin) - david.admin@daleiq.com / password123")
+print("1. Savithri Rep (Sales Rep) - savithri.rep@daleiq.com / password123")
+print("2. Mohan Manager (Team Lead) - mohan.manager@daleiq.com / password123")
+print("3. Arjun Admin (Owner / Admin) - arjun.admin@daleiq.com / password123")

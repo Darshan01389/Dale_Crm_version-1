@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const MOCK_NOTIFS = [
-  { id: '1', type: 'mention', user: 'Ravi Kumar', text: 'mentioned you in a note on Sarah Jenkins', time: '2m ago', severity: 'info', read: false },
-  { id: '2', type: 'alert', user: 'AI Assistant', text: 'Lead "Michael Chen" is at risk — no contact in 12 days', time: '1h ago', severity: 'warning', read: false },
+  { id: '1', type: 'mention', user: 'Ravi Kumar', text: 'mentioned you in a note on Savithri Devi', time: '2m ago', severity: 'info', read: false },
+  { id: '2', type: 'alert', user: 'AI Assistant', text: 'Lead "Mohan Kumar" is at risk — no contact in 12 days', time: '1h ago', severity: 'warning', read: false },
   { id: '3', type: 'alert', user: 'System', text: 'New lead "Priya Patel" assigned to you', time: '3h ago', severity: 'success', read: true },
   { id: '4', type: 'alert', user: 'Billing', text: 'AI Credit quota reached 90%', time: '1d ago', severity: 'critical', read: true },
 ];
