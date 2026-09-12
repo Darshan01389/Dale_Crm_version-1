@@ -23,4 +23,10 @@ from .lead_attribution import LeadAttribution
 from .utm_tracking import UTMTracking
 from .website_event import WebsiteEvent
 from .salesperson import Salesperson
-
+from .research_extension import (
+    EvidenceSpan,
+    StageTransitionDecision,
+    AcousticFeatures,
+    AnnotationLabel,
+    DecisionGateConfig,
+)

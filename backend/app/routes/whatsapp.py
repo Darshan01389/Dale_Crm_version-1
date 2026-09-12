@@ -19,7 +19,7 @@ from app.core.dependencies import get_current_user
 from app.models.activity import Activity
 from app.models.user import User
 
-router = APIRouter(prefix="/api/whatsapp", tags=["WhatsApp Agent"])
+router = APIRouter(prefix="/whatsapp", tags=["WhatsApp Agent"])
 
 
 # ──────────────────────────────────────────────

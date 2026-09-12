@@ -9,6 +9,7 @@ class Company(Base):
     name = Column(String, nullable=False)
     industry = Column(String)
     whatsapp_number = Column(String)
+    size = Column(String, nullable=True)
     join_code = Column(String(10), nullable=True)
 
     leads = relationship("Lead", back_populates="linked_company")

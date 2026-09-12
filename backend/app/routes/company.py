@@ -6,10 +6,12 @@ from app.schemas.company import CompanyCreate, CompanyOut
 
 router = APIRouter(prefix="/company", tags=["Company"])
 
-@router.post("/", response_model=CompanyOut)
+@router.post("", response_model=CompanyOut)
+@router.post("/", response_model=CompanyOut, include_in_schema=False)
 def create_company(company: CompanyCreate, db: Session = Depends(get_db)):
     import random
-    new_company = Company(**company.dict())
+    company_data = company.model_dump() if hasattr(company, "model_dump") else company.dict()
+    new_company = Company(**company_data)
     new_company.join_code = str(random.randint(100000, 999999))
     db.add(new_company)
     db.commit()
@@ -17,7 +19,8 @@ def create_company(company: CompanyCreate, db: Session = Depends(get_db)):
     return new_company
 
 
-@router.get("/", response_model=list[CompanyOut])
+@router.get("", response_model=list[CompanyOut])
+@router.get("/", response_model=list[CompanyOut], include_in_schema=False)
 def get_companies(db: Session = Depends(get_db)):
     companies = db.query(Company).all()
     import random

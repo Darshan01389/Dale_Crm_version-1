@@ -61,3 +61,6 @@ merged_lead_dataset.csv
 ml_ready_lead_dataset.csv
 backend/whatsapp_gateway/.wwebjs_auth/
 backend/whatsapp_gateway/.wwebjs_cache/
+*.log
+backend/logs/
+backend/uploads/

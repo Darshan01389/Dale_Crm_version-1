@@ -100,6 +100,29 @@ const Leads = () => {
     return true;
   });
 
+  const handleExportCSV = async () => {
+    try {
+      const token = localStorage.getItem('voiceiq_token');
+      const response = await fetch('/api/leads/export/csv', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error("Export failed");
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `leads_export_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      show({ type: 'success', message: 'Leads CSV downloaded successfully!' });
+    } catch (err) {
+      console.error(err);
+      show({ type: 'error', message: 'Failed to download leads CSV.' });
+    }
+  };
+
   const stages = ['All', 'New', 'Contacted', 'Proposal', 'Negotiation', 'Closed-Won'];
 
   return (
@@ -157,6 +180,15 @@ const Leads = () => {
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 13, color: 'var(--text-muted)', fontWeight: 600, marginRight: 12 }}>{filtered.length} leads found</span>
           
+          <button 
+            onClick={handleExportCSV}
+            className="btn-secondary"
+            title="Download CSV report of leads"
+            style={{ height: 44, padding: '0 16px', display: 'flex', alignItems: 'center', gap: 8, borderRadius: 10, fontSize: 13, fontWeight: 700 }}
+          >
+            📥 Export CSV
+          </button>
+
           {['Owner / Admin', 'Sales Admin', 'Team Lead', 'Manager', 'admin', 'admin/developers', 'Developer'].includes(profile?.role) && (
             <button 
               onClick={async () => {

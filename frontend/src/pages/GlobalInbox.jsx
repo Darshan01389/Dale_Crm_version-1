@@ -4,6 +4,7 @@ import IntentBadge from '../components/IntentBadge';
 import EmptyState from '../components/EmptyState';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import LogCallModal from '../components/LogCallModal';
+import VoiceNotePlayer from '../components/VoiceNotePlayer';
 
 // Deterministic modern styling colors
 const ModernColors = ['#4F46E5', '#0EA5E9', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
@@ -118,7 +119,7 @@ const GlobalInbox = () => {
   }, []);
 
   const loadData = async () => {
-    const token = localStorage.getItem('voiceiq_token');
+    const token = sessionStorage.getItem('voiceiq_token') || localStorage.getItem('voiceiq_token');
     if (!token) return;
 
     try {
@@ -207,7 +208,7 @@ const GlobalInbox = () => {
   };
 
   const fetchThread = async (leadId) => {
-    const token = localStorage.getItem('voiceiq_token');
+    const token = sessionStorage.getItem('voiceiq_token') || localStorage.getItem('voiceiq_token');
     if (!token || !leadId) return;
 
     try {
@@ -279,7 +280,7 @@ const GlobalInbox = () => {
     if (!active) return;
     setAiLoading(true);
     setAiDraft('');
-    const token = localStorage.getItem('voiceiq_token');
+    const token = sessionStorage.getItem('voiceiq_token') || localStorage.getItem('voiceiq_token');
     try {
       const res = await fetch(`/api/leads/${active.id}/ai-suggest?channel=${channel.toLowerCase()}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -348,7 +349,7 @@ const GlobalInbox = () => {
     const currentMsg = msg;
     setMsg(''); // clear instantly
 
-    const token = localStorage.getItem('voiceiq_token');
+    const token = sessionStorage.getItem('voiceiq_token') || localStorage.getItem('voiceiq_token');
     try {
       let res;
       if (channel === 'WhatsApp') {
@@ -393,6 +394,43 @@ const GlobalInbox = () => {
     setActive(contact);
     if (window.innerWidth <= 768) {
       setView('thread');
+    }
+  };
+
+  const [emailSubject, setEmailSubject] = useState('');
+
+  const handleSimulateInboundEmail = async () => {
+    if (!active) return;
+    try {
+      const token = sessionStorage.getItem('voiceiq_token') || localStorage.getItem('voiceiq_token');
+      const sender = `${active.name.toLowerCase().replace(/[^a-z0-9]/g, '')}@enterprise.com`;
+      await fetch('/api/activities/email-inbound', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          lead_id: active.id,
+          sender_email: sender,
+          subject: `Re: Dale CRM Enterprise Rollout`,
+          body: `Hi team, we reviewed the live battlecards and softphone features. This fits our requirements nicely. Can you confirm if you support custom SSO integrations and what the onboarding timeline is?`
+        })
+      });
+      await fetchThread(active.id);
+      await loadData();
+    } catch (err) {
+      console.error("Error simulating inbound email:", err);
+    }
+  };
+
+  const handleSmartDraft = () => {
+    if (!active) return;
+    if (channel === 'Email') {
+      setEmailSubject(`Dale CRM Enterprise Proposal & Next Steps for ${active.name}`);
+      setMsg(`Dear ${active.name},\n\nThank you for exploring Dale CRM. Based on our review, our native WhatsApp automation and Softphone capabilities can accelerate your team's pipeline conversion by up to 30%.\n\nI've attached our technical architecture whitepaper and pricing tiers. Would you be open to a 15-minute walkthrough this week?\n\nBest regards,\nEnterprise Sales Team\nDale CRM`);
+    } else {
+      setMsg(`Hi ${active.name}! Just following up on our earlier discussion regarding Dale CRM. Would you like a quick 5-min demo walkthrough today?`);
     }
   };
 
@@ -817,6 +855,96 @@ const GlobalInbox = () => {
                   </div>
                 ))
               )}
+            </div>
+
+            {/* Rich Omnichannel Composer */}
+            <div style={{ 
+              padding: '16px 20px', 
+              background: 'var(--bg-surface)', 
+              borderTop: '1px solid var(--border)',
+              display: 'flex', flexDirection: 'column', gap: 12
+            }}>
+              {/* Channel Selector & Actions */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 6, background: 'var(--bg-subtle)', padding: 3, borderRadius: 10, border: '1px solid var(--border-subtle)' }}>
+                  {['WhatsApp', 'Email', 'SMS'].map(ch => (
+                    <button
+                      key={ch}
+                      type="button"
+                      onClick={() => setChannel(ch)}
+                      style={{
+                        padding: '4px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700,
+                        border: 'none', cursor: 'pointer',
+                        background: channel === ch ? 'var(--primary)' : 'transparent',
+                        color: channel === ch ? 'white' : 'var(--text-muted)',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      {ch === 'WhatsApp' ? '📱 WhatsApp' : ch === 'Email' ? '✉️ Email' : '💬 SMS'}
+                    </button>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {channel === 'Email' && (
+                    <button
+                      type="button"
+                      onClick={handleSimulateInboundEmail}
+                      className="btn-secondary"
+                      style={{ padding: '4px 10px', fontSize: 11, borderRadius: 8, display: 'flex', alignItems: 'center', gap: 4 }}
+                    >
+                      📥 Simulate Inbound
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleSmartDraft}
+                    className="btn-secondary"
+                    style={{ padding: '4px 10px', fontSize: 11, borderRadius: 8, display: 'flex', alignItems: 'center', gap: 4, color: 'var(--primary)' }}
+                  >
+                    ✨ 1-Click AI Draft
+                  </button>
+                </div>
+              </div>
+
+              {/* Optional Email Subject Input */}
+              {channel === 'Email' && (
+                <input 
+                  type="text"
+                  value={emailSubject}
+                  onChange={e => setEmailSubject(e.target.value)}
+                  placeholder="Subject: (e.g. Dale CRM Follow-up)"
+                  className="input"
+                  style={{ height: 36, fontSize: 13, padding: '0 10px' }}
+                />
+              )}
+
+              {/* Message Text Input & Dispatch */}
+              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
+                <textarea
+                  value={msg}
+                  onChange={e => setMsg(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      send();
+                    }
+                  }}
+                  placeholder={channel === 'Email' ? 'Write email message body... (Shift+Enter for newline)' : `Type ${channel} message... (Press Enter to send)`}
+                  rows={channel === 'Email' ? 3 : 2}
+                  className="input custom-scroll"
+                  style={{ flex: 1, padding: 10, fontSize: 13, resize: 'none', lineHeight: 1.5 }}
+                />
+                <button
+                  type="button"
+                  onClick={send}
+                  disabled={!msg.trim()}
+                  className="btn-primary"
+                  style={{ height: 42, padding: '0 20px', borderRadius: 10, fontWeight: 700, fontSize: 13 }}
+                >
+                  Send
+                </button>
+              </div>
             </div>
           </>
         ) : (

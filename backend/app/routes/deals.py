@@ -1,6 +1,9 @@
+import csv
+import io
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -19,6 +22,43 @@ def create_deal(
     current_user: User = Depends(get_current_user),
 ):
     return deal_service.create_deal(db, current_user, body)
+
+
+@router.get("/export/csv")
+def export_deals_csv(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    outcome: str | None = Query(None, description="Filter: open | won | lost"),
+    company_id: int | None = Query(None),
+):
+    """Export deals as a formatted CSV file."""
+    deals = deal_service.list_deals(db, current_user, outcome=outcome, skip=0, limit=2000, company_id=company_id)
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "Deal ID", "Title", "Value (INR)", "Stage", "Outcome", 
+        "Probability (%)", "Expected Close Date", "Created Date"
+    ])
+    
+    for d in deals:
+        writer.writerow([
+            str(d.id),
+            d.title or "",
+            float(d.value or 0.0),
+            d.stage or (d.pipeline_stage.name if hasattr(d, 'pipeline_stage') and d.pipeline_stage else ""),
+            d.outcome or "open",
+            round(float(d.probability or 0.0), 1),
+            d.expected_close_date.strftime("%Y-%m-%d") if d.expected_close_date else "",
+            d.created_at.strftime("%Y-%m-%d %H:%M") if d.created_at else ""
+        ])
+        
+    csv_bytes = output.getvalue().encode("utf-8")
+    return Response(
+        content=csv_bytes,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=deals_export.csv"}
+    )
 
 
 @router.get("", response_model=list[DealResponse])

@@ -9,15 +9,17 @@ from app.schemas.user import UserResponse
 router = APIRouter(prefix="/users", tags=["Users"])
 
 @router.get("", response_model=List[UserResponse])
+@router.get("/", response_model=List[UserResponse], include_in_schema=False)
 def list_users(
     db: Session = Depends(get_db),
     company_id: int | None = Query(None),
     _admin: User = Depends(get_admin_user)
 ):
     """Admin only: List users scoped by company."""
-    q = db.query(User).filter(User.is_super_admin == False)
+    q = db.query(User)
     if not _admin.is_super_admin:
         q = q.filter(User.company_id == _admin.company_id)
+        return [u for u in q.all() if not u.is_super_admin]
     elif company_id is not None:
         q = q.filter(User.company_id == company_id)
     return q.all()
@@ -193,7 +195,14 @@ def change_user_role(
     if not target_user:
         raise HTTPException(status_code=404, detail="User not found.")
         
-    # Enforce only daleaicrm@gmail.com can create/promote global Super Admins (company_id is None)
+    # Enforce only daleaicrm@gmail.com can create/promote Owner / Admin
+    if body.role == "Owner / Admin" and current_user.email != "daleaicrm@gmail.com":
+        raise HTTPException(
+            status_code=403,
+            detail="Only the master Super Admin (daleaicrm@gmail.com) can create or promote users to Owner / Admin."
+        )
+
+    # Also enforce only daleaicrm@gmail.com can promote global admins (company_id is None)
     is_global_admin_promotion = body.role in ["Owner / Admin", "Sales Admin"] and target_user.company_id is None
     if is_global_admin_promotion and current_user.email != "daleaicrm@gmail.com":
         raise HTTPException(

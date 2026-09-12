@@ -3,6 +3,14 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import './index.css'
+
+// Force logout and redirect to login page on page refresh/reload
+sessionStorage.removeItem('voiceiq_token');
+sessionStorage.removeItem('voiceiq_refresh_token');
+localStorage.removeItem('voiceiq_token');
+localStorage.removeItem('voiceiq_refresh_token');
+localStorage.removeItem('voiceiq_profile');
+
 import './utils/api' // Initialize global Axios interceptors
 import { ThemeProvider } from './contexts/ThemeContext'
 import { UserProvider } from './contexts/UserContext'

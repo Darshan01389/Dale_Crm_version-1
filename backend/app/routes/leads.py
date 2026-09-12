@@ -1,6 +1,9 @@
+import csv
+import io
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, BackgroundTasks, File, UploadFile, HTTPException, Request, Form
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -12,6 +15,55 @@ from app.schemas.lead import LeadCreate, LeadResponse, LeadUpdate, LeadIngest, W
 from app.services import lead_service
 
 router = APIRouter(prefix="/leads", tags=["Leads"])
+
+
+@router.get("/export/csv")
+def export_leads_csv(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    search: str | None = Query(None),
+    status: str | None = Query(None),
+    source: str | None = Query(None),
+    company_id: int | None = Query(None),
+):
+    """Export leads as a formatted CSV file."""
+    leads = lead_service.list_leads(
+        db, current_user, skip=0, limit=2000,
+        search=search, status=status, source=source,
+        company_id=company_id
+    )
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "Lead ID", "Title / Name", "Contact Person", "Phone", "Email", 
+        "Company", "Status", "Deal Value (INR)", "AI Score", "ML Score", 
+        "Sentiment", "Lead Source", "Created Date"
+    ])
+    
+    for l in leads:
+        writer.writerow([
+            str(l.id),
+            l.title or "",
+            l.name or "",
+            l.phone or "",
+            l.email or "",
+            l.company or "",
+            l.status or "new",
+            float(l.deal_value or 0.0),
+            round(float(l.ai_score or 0.0), 1),
+            round(float(l.ml_lead_score or 0.0), 1) if l.ml_lead_score is not None else "",
+            l.sentiment_label or "neutral",
+            l.source or "Direct",
+            l.created_at.strftime("%Y-%m-%d %H:%M") if l.created_at else ""
+        ])
+        
+    csv_bytes = output.getvalue().encode("utf-8")
+    return Response(
+        content=csv_bytes,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=leads_export.csv"}
+    )
 
 
 @router.get("/{lead_id}/report", response_model=LeadReportResponse)
@@ -166,6 +218,19 @@ def list_leads(
         search=search, status=status, source=source,
         date_from=date_from, date_to=date_to, min_score=min_score,
         company_id=company_id
+    )
+
+
+@router.get("/priority", response_model=list[LeadResponse])
+def get_priority_leads(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    limit: int = Query(50, ge=1, le=100),
+    company_id: int | None = Query(None),
+):
+    """Get priority leads for today dashboard sorted by AI score and recency."""
+    return lead_service.list_priority_leads(
+        db, current_user, limit=limit, company_id=company_id
     )
 
 

@@ -5,7 +5,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
@@ -79,7 +79,8 @@ from app.models import (
     utm_tracking as m_utm, website_event as m_event,
     campaign_metric as m_metric, automation_rule as m_automation,
     billing as m_billing, password_reset as m_reset,
-    forum_reply as m_forum_reply, calendar_event as m_calendar
+    forum_reply as m_forum_reply, calendar_event as m_calendar,
+    research_extension as m_research
 )
 Base.metadata.create_all(bind=engine)
 
@@ -130,31 +131,21 @@ from app.routes.billing import router as billing_router
 from app.routes.system import router as system_router
 from app.routes.calendar import router as calendar_router
 from app.routes.superadmin import router as superadmin_router
+from app.routes.research_audit import router as research_audit_router
+from app.routes.dalelq_routes import router as dalelq_router
 
-app.include_router(auth_router)
-app.include_router(superadmin_router)
-app.include_router(user_router)
-app.include_router(lead_router)
-app.include_router(voice_router)
-app.include_router(company_router)
-app.include_router(salesperson_router)
-app.include_router(deal_router)
-app.include_router(activity_router)
-app.include_router(pipeline_router)
-app.include_router(analytics_router)
-app.include_router(team_router)
-app.include_router(ai_router)
-app.include_router(chatbot_router)   # Merged chatbot — no separate server needed
-app.include_router(whatsapp_router)  # WhatsApp Agent + Simulator
-app.include_router(task_router)      # AI Tasks & Stagnation
-app.include_router(forum_router)     # Community Forums
-app.include_router(lead_source_router)
-app.include_router(webhook_router)
-app.include_router(event_router)
-app.include_router(automation_router)
-app.include_router(billing_router)
-app.include_router(system_router)
-app.include_router(calendar_router)
+ALL_ROUTERS = [
+    auth_router, superadmin_router, user_router, lead_router, voice_router,
+    company_router, salesperson_router, deal_router, activity_router,
+    pipeline_router, analytics_router, team_router, ai_router, chatbot_router,
+    whatsapp_router, task_router, forum_router, lead_source_router,
+    webhook_router, event_router, automation_router, billing_router,
+    system_router, calendar_router, research_audit_router, dalelq_router
+]
+
+for r in ALL_ROUTERS:
+    app.include_router(r)
+    app.include_router(r, prefix="/api")
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
@@ -166,6 +157,63 @@ async def global_exception_handler(request, exc):
         status_code=500,
         content={"detail": "An internal server error occurred."}
     )
+
+# ── REAL-TIME PRESENCE & COLLABORATION WEBSOCKETS ─────────────
+class PresenceManager:
+    def __init__(self):
+        # lead_id -> {websocket: user_dict}
+        self.rooms: dict[str, dict[WebSocket, dict]] = {}
+
+    async def connect(self, lead_id: str, websocket: WebSocket, user_info: dict):
+        await websocket.accept()
+        if lead_id not in self.rooms:
+            self.rooms[lead_id] = {}
+        self.rooms[lead_id][websocket] = user_info
+        await self.broadcast(lead_id)
+
+    async def disconnect(self, lead_id: str, websocket: WebSocket):
+        if lead_id in self.rooms and websocket in self.rooms[lead_id]:
+            del self.rooms[lead_id][websocket]
+            if not self.rooms[lead_id]:
+                del self.rooms[lead_id]
+            else:
+                await self.broadcast(lead_id)
+
+    async def broadcast(self, lead_id: str):
+        if lead_id not in self.rooms:
+            return
+        active_users = list(self.rooms[lead_id].values())
+        payload = {
+            "type": "presence_update",
+            "lead_id": lead_id,
+            "active_users": active_users,
+            "count": len(active_users)
+        }
+        for ws in list(self.rooms[lead_id].keys()):
+            try:
+                await ws.send_json(payload)
+            except Exception:
+                pass
+
+presence_manager = PresenceManager()
+
+@app.websocket("/ws/presence/{lead_id}")
+async def presence_websocket(websocket: WebSocket, lead_id: str):
+    user_name = websocket.query_params.get("user_name", "Sales Rep")
+    user_id = websocket.query_params.get("user_id", "rep_1")
+    user_info = {"user_name": user_name, "user_id": user_id}
+    
+    await presence_manager.connect(lead_id, websocket, user_info)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            if data == "ping":
+                await websocket.send_text("pong")
+    except WebSocketDisconnect:
+        await presence_manager.disconnect(lead_id, websocket)
+    except Exception:
+        await presence_manager.disconnect(lead_id, websocket)
+
 
 @app.get("/")
 def root():

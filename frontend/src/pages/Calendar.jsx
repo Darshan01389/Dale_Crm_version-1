@@ -125,6 +125,31 @@ const Calendar = () => {
     });
   };
 
+  const handleSlotClick = (dayFullDate, timeLabel) => {
+    const year = dayFullDate.getFullYear();
+    const month = String(dayFullDate.getMonth() + 1).padStart(2, '0');
+    const day = String(dayFullDate.getDate()).padStart(2, '0');
+    setNewDate(`${year}-${month}-${day}`);
+
+    const parts = timeLabel.split(' ');
+    let hours = parseInt(parts[0], 10);
+    const ampm = parts[1];
+    if (ampm === 'PM' && hours < 12) hours += 12;
+    if (ampm === 'AM' && hours === 12) hours = 0;
+    const timeStr = `${String(hours).padStart(2, '0')}:00`;
+    setNewTime(timeStr);
+    setShowNewMeeting(true);
+  };
+
+  const handleDayClick = (dayFullDate) => {
+    const year = dayFullDate.getFullYear();
+    const month = String(dayFullDate.getMonth() + 1).padStart(2, '0');
+    const day = String(dayFullDate.getDate()).padStart(2, '0');
+    setNewDate(`${year}-${month}-${day}`);
+    setNewTime('09:00');
+    setShowNewMeeting(true);
+  };
+
   const handleReschedule = async () => {
     try {
       const start = new Date(`${rescheduleData.date}T${rescheduleData.time}`);
@@ -265,10 +290,18 @@ const Calendar = () => {
             {/* Header row */}
             <div style={{ background: 'var(--bg-subtle)' }} />
             {days.map(day => (
-              <div key={day.label} style={{
-                padding: '16px', textAlign: 'center', background: 'var(--bg-subtle)',
-                fontSize: 11, fontWeight: 900, color: 'var(--text-muted)', letterSpacing: 1
-              }}>
+              <div 
+                key={day.label}
+                onClick={() => handleDayClick(day.fullDate)}
+                title="Click to schedule a meeting on this day"
+                style={{
+                  padding: '16px', textAlign: 'center', background: 'var(--bg-subtle)',
+                  fontSize: 11, fontWeight: 900, color: 'var(--text-muted)', letterSpacing: 1,
+                  cursor: 'pointer', transition: 'background 0.2s'
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(79, 70, 229, 0.08)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-subtle)'}
+              >
                 <div style={{ marginBottom: 4 }}>{day.label}</div>
                 <div style={{ fontSize: 18, color: 'var(--text)', fontWeight: 800 }}>{day.date}</div>
               </div>
@@ -287,10 +320,23 @@ const Calendar = () => {
                 {days.map(day => {
                   const event = getEventForDayAndTime(day.fullDate, time);
                   return (
-                    <div key={day.label} style={{
-                      position: 'relative', height: 100, padding: 4,
-                      background: 'var(--bg-surface)', borderLeft: '1px solid var(--border-subtle)', borderTop: '1px solid var(--border-subtle)'
-                    }}>
+                    <div 
+                      key={day.label} 
+                      onClick={() => !event && handleSlotClick(day.fullDate, time)}
+                      title={!event ? `Click to schedule meeting at ${time}` : undefined}
+                      style={{
+                        position: 'relative', height: 100, padding: 4,
+                        background: 'var(--bg-surface)', borderLeft: '1px solid var(--border-subtle)', borderTop: '1px solid var(--border-subtle)',
+                        cursor: event ? 'default' : 'pointer',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={e => {
+                        if (!event) e.currentTarget.style.background = 'rgba(79, 70, 229, 0.04)';
+                      }}
+                      onMouseLeave={e => {
+                        if (!event) e.currentTarget.style.background = 'var(--bg-surface)';
+                      }}
+                    >
                       {event && (
                         <div 
                           onClick={() => {

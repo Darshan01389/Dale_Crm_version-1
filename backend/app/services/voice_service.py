@@ -112,6 +112,24 @@ class VoiceService:
 
             9. "bant_qualification" (Object with boolean keys: "budget_identified", "authority_confirmed", "need_established", "timeline_clear")
 
+            10. "candidate_transitions" (Array of Objects): Candidate CRM stage moves. Each object MUST have:
+
+                - "from_stage" (String: e.g. "new", "contacted", "proposal", "negotiation", "won", "lost")
+
+                - "to_stage" (String: e.g. "proposal", "negotiation", "won", "lost")
+
+                - "recommend_transition" (Boolean: true if conversation warrants this transition)
+
+                - "evidence" (Array of Objects, max 5): Grounding quotes. Each object MUST have:
+
+                    - "quote" (String: EXACT substring copied directly from the transcript, verbatim)
+
+                    - "start_index" (Integer: 0-based character start index of quote in transcript)
+
+                    - "end_index" (Integer: character end index of quote in transcript)
+
+                    - "rationale" (String: short justification explaining why this quote supports the transition)
+
 
 
             Transcript:
@@ -132,7 +150,7 @@ class VoiceService:
 
                 "messages": [
 
-                    {"role": "system", "content": "You are an elite conversational intelligence analyzer (like Gong or Chorus)."},
+                    {"role": "system", "content": "You are an elite conversational intelligence analyzer (like Gong or Chorus). When extracting evidence quotes, you MUST quote verbatim exact substrings of the transcript."},
 
                     {"role": "user", "content": prompt}
 
@@ -176,15 +194,163 @@ class VoiceService:
 
             content = payload["choices"][0]["message"]["content"]
 
-            
+            raw_analysis = json.loads(content)
 
-            return json.loads(content)
+
+
+            # Programmatic post-hoc verification of evidence spans per rules.md #11
+
+            raw_analysis["candidate_transitions"] = self.validate_evidence_spans(
+
+                text, raw_analysis.get("candidate_transitions", [])
+
+            )
+
+            return raw_analysis
 
         except Exception as e:
 
             print(f"Voice AI: Error during intelligence analysis: {e}")
 
             return {}
+
+
+
+    @staticmethod
+
+    def validate_evidence_spans(transcript: str, candidate_transitions: list) -> list:
+
+        """
+
+        Validates that evidence quotes are exact substrings of the transcript.
+
+        Adjusts character offsets if slightly misaligned. Discards paraphrased quotes.
+
+        Limits to 5 evidence items per transition.
+
+        """
+
+        if not candidate_transitions or not transcript:
+
+            return []
+
+
+
+        validated_candidates = []
+
+        for cand in candidate_transitions:
+
+            if not isinstance(cand, dict):
+
+                continue
+
+
+
+            raw_evidence = cand.get("evidence", [])
+
+            if not isinstance(raw_evidence, list):
+
+                raw_evidence = []
+
+
+
+            validated_evidence = []
+
+            for ev in raw_evidence[:5]:  # Cap at 5 items
+
+                if not isinstance(ev, dict):
+
+                    continue
+
+
+
+                quote = ev.get("quote", "").strip()
+
+                if not quote or len(quote) < 5:
+
+                    continue
+
+
+
+                start = ev.get("start_index", -1)
+
+                end = ev.get("end_index", -1)
+
+
+
+                # Check if exact match at given offset
+
+                is_exact = False
+
+                if 0 <= start < end <= len(transcript):
+
+                    if transcript[start:end] == quote:
+
+                        is_exact = True
+
+
+
+                # If offset incorrect, locate exact substring in transcript
+
+                if not is_exact:
+
+                    idx = transcript.find(quote)
+
+                    if idx != -1:
+
+                        start = idx
+
+                        end = idx + len(quote)
+
+                        is_exact = True
+
+                    else:
+
+                        # Case-insensitive search fallback
+
+                        lower_idx = transcript.lower().find(quote.lower())
+
+                        if lower_idx != -1:
+
+                            start = lower_idx
+
+                            end = lower_idx + len(quote)
+
+                            quote = transcript[start:end]  # exact case from transcript
+
+                            is_exact = True
+
+
+
+                # Only retain exact substrings
+
+                if is_exact:
+
+                    validated_evidence.append({
+
+                        "quote": quote,
+
+                        "start_index": start,
+
+                        "end_index": end,
+
+                        "rationale": ev.get("rationale", "Evidence identified in conversation")
+
+                    })
+
+
+
+            cand["evidence"] = validated_evidence
+
+            validated_candidates.append(cand)
+
+
+
+        return validated_candidates
+
+
+
+
 
 
 

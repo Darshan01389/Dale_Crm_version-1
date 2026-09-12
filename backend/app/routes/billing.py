@@ -64,7 +64,6 @@ def subscribe(data: SubscriptionInitRequest, db: Session = Depends(get_db), curr
 @router.post("/webhook/stripe")
 async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
     from app.core.config import settings
-    import stripe
     import json
     
     payload = await request.body()
@@ -80,6 +79,7 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Stripe webhook secret is not configured.")
         
     try:
+        import stripe
         event = stripe.Webhook.construct_event(
             payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
         )

@@ -14,6 +14,9 @@ const ComposeSheet = ({ isOpen, onClose, contact, initialChannel = 'WhatsApp', i
   const [editing, setEditing] = useState(false);
   const [subject, setSubject] = useState('');
   const [deliveryStatus, setDeliveryStatus] = useState(null); // null | 'sent' | 'failed'
+  const [proposalData, setProposalData] = useState(null);
+  const [proposalTier, setProposalTier] = useState('professional');
+  const [proposalLoading, setProposalLoading] = useState(false);
 
   const token = localStorage.getItem('voiceiq_token');
 
@@ -23,11 +26,20 @@ const ComposeSheet = ({ isOpen, onClose, contact, initialChannel = 'WhatsApp', i
       setDeliveryStatus(null);
       setFreeText('');
       setEditing(false);
+      setProposalData(null);
     }
   }, [isOpen, initialChannel]);
 
+  // Sync draft when channel changes if proposal was generated
   useEffect(() => {
     if (!isOpen) return;
+    if (proposalData?.channel_templates?.[channel]) {
+      setDraft(proposalData.channel_templates[channel]);
+      if (channel === 'Email') {
+        setSubject(`Proposal: ${proposalData.tier_recommended} — ${proposalData.company_name}`);
+      }
+      return;
+    }
 
     if (initialDraft && channel === initialChannel) {
       setDraft(initialDraft);
@@ -55,7 +67,7 @@ const ComposeSheet = ({ isOpen, onClose, contact, initialChannel = 'WhatsApp', i
         })
         .finally(() => setLoading(false));
     }
-  }, [isOpen, contact?.id, channel, initialDraft, initialChannel]);
+  }, [isOpen, contact?.id, channel, initialDraft, initialChannel, proposalData]);
 
   useEffect(() => {
     const handleKey = (e) => { if (e.key === 'Escape') onClose?.(); };
@@ -76,6 +88,39 @@ const ComposeSheet = ({ isOpen, onClose, contact, initialChannel = 'WhatsApp', i
       })
       .catch(() => {})
       .finally(() => setLoading(false));
+  };
+
+  const generateProposal = async (tierToUse) => {
+    const targetTier = tierToUse || proposalTier;
+    setProposalLoading(true);
+    try {
+      const res = await fetch('/api/copilot/proposal', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          lead_id: contact?.id ? String(contact.id) : null,
+          tier: targetTier,
+          transcripts: [contact?.notes || '']
+        })
+      });
+      if (!res.ok) throw new Error('Proposal generation failed');
+      const data = await res.json();
+      setProposalData(data);
+      if (data.channel_templates && data.channel_templates[channel]) {
+        setDraft(data.channel_templates[channel]);
+      }
+      if (channel === 'Email') {
+        setSubject(`Proposal: ${data.tier_recommended} — ${data.company_name}`);
+      }
+      show({ type: 'success', message: `✨ Executive Proposal generated for ${data.tier_recommended}!` });
+    } catch (err) {
+      show({ type: 'error', message: `Proposal generation error: ${err.message}` });
+    } finally {
+      setProposalLoading(false);
+    }
   };
 
   /**
@@ -185,6 +230,133 @@ const ComposeSheet = ({ isOpen, onClose, contact, initialChannel = 'WhatsApp', i
             {deliveryStatus === 'sent' ? '✅ Sent & saved to interaction chart' : '❌ Delivery failed — check WhatsApp config'}
           </div>
         )}
+
+        {/* ── FRONTIER PILLAR 4: 1-CLICK PROPOSAL COPILOT ── */}
+        <div style={{
+          marginBottom: 20,
+          borderRadius: 14,
+          padding: 16,
+          background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%)',
+          border: '1px solid rgba(99, 102, 241, 0.25)',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 16 }}>✨</span>
+              <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--primary)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                1-Click Executive Proposal Copilot
+              </span>
+            </div>
+            <select
+              value={proposalTier}
+              onChange={(e) => {
+                setProposalTier(e.target.value);
+                generateProposal(e.target.value);
+              }}
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                padding: '4px 8px',
+                borderRadius: 6,
+                border: '1px solid var(--border)',
+                background: 'var(--bg-surface)',
+                color: 'var(--text)',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="starter">Growth Tier (₹25k/mo)</option>
+              <option value="professional">Enterprise Tier (₹75k/mo)</option>
+              <option value="custom">Autonomous OS (₹1.5L/mo)</option>
+            </select>
+          </div>
+
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 12px 0', lineHeight: 1.4 }}>
+            Synthesizes conversation transcripts, BANT criteria, and pricing matrix into an executive-ready proposal.
+          </p>
+
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={() => generateProposal()}
+              disabled={proposalLoading}
+              style={{
+                flex: 1,
+                padding: '8px 12px',
+                borderRadius: 8,
+                border: 'none',
+                background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+                color: 'white',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: proposalLoading ? 'wait' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)'
+              }}
+            >
+              {proposalLoading ? 'Synthesizing Swarm Proposal…' : '⚡ Generate Grounded Proposal'}
+            </button>
+            {proposalData && (
+              <button
+                onClick={() => {
+                  setProposalData(null);
+                  regenerate();
+                }}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                  background: 'transparent',
+                  color: 'var(--text-muted)',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Reset
+              </button>
+            )}
+          </div>
+
+          {/* Proposal Summary Card */}
+          {proposalData && (
+            <div style={{
+              marginTop: 12,
+              padding: 12,
+              borderRadius: 10,
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border)',
+              fontSize: 12
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ fontWeight: 800, color: 'var(--text)', fontSize: 13 }}>
+                  {proposalData.tier_recommended}
+                </span>
+                <span style={{ fontWeight: 800, color: 'var(--primary)', background: 'var(--primary-glow)', padding: '2px 8px', borderRadius: 6, fontSize: 11 }}>
+                  ACV ₹{(proposalData.annual_contract_value_inr).toLocaleString()}
+                </span>
+              </div>
+              
+              {/* BANT Pills */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6, marginBottom: 8 }}>
+                {Object.entries(proposalData.bant_qualification_summary || {}).map(([k, v]) => (
+                  <div key={k} style={{ padding: '4px 8px', borderRadius: 6, background: 'var(--bg-subtle)', fontSize: 10.5 }}>
+                    <strong style={{ color: 'var(--primary)' }}>{k}:</strong> <span style={{ color: 'var(--text-muted)' }}>{v.substring(0, 40)}…</span>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ fontSize: 11, color: 'var(--success)', fontWeight: 600 }}>
+                ✓ {proposalData.roi_projection?.substring(0, 75)}…
+              </div>
+              <div style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 4, fontStyle: 'italic' }}>
+                Proposal draft loaded into {channel} tab below. Ready to review and dispatch.
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* AI draft card */}
         <div style={{ marginBottom: 20 }}>

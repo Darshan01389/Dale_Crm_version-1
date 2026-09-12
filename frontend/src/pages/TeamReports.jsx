@@ -11,6 +11,9 @@ const TeamReports = () => {
   const [loading, setLoading] = useState(true);
   const [reportLoading, setReportLoading] = useState(true);
   const [dateRange, setDateRange] = useState('30 Days');
+  const [miningData, setMiningData] = useState(null);
+  const [simulateSpike, setSimulateSpike] = useState(true);
+  const [activeSnippetCluster, setActiveSnippetCluster] = useState(null);
 
   useEffect(() => {
     fetchDashboardData();
@@ -18,7 +21,20 @@ const TeamReports = () => {
 
   useEffect(() => {
     fetchTeamReportData();
+    fetchMiningData(simulateSpike);
   }, []);
+
+  const fetchMiningData = async (simulate = simulateSpike) => {
+    try {
+      const token = localStorage.getItem('voiceiq_token');
+      const res = await axios.get(`/api/ml/topics/mining?simulate_spike=${simulate}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      setMiningData(res.data);
+    } catch (err) {
+      console.error("Error fetching topic dialogue mining:", err);
+    }
+  };
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -87,6 +103,120 @@ const TeamReports = () => {
           <option>12 Months</option>
         </select>
       </div>
+
+      {/* ── FRONTIER PILLAR 5: POISSON ANOMALY OUTAGE SPIKE ALERT BANNER ── */}
+      {miningData?.anomaly_spike && (
+        <div style={{
+          marginBottom: 24,
+          borderRadius: 14,
+          padding: '16px 20px',
+          background: miningData.anomaly_spike.has_anomaly 
+            ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(245, 158, 11, 0.12) 100%)'
+            : 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%)',
+          border: `1.5px solid ${miningData.anomaly_spike.has_anomaly ? 'rgba(239, 68, 68, 0.4)' : 'rgba(16, 185, 129, 0.3)'}`,
+          boxShadow: miningData.anomaly_spike.has_anomaly ? '0 4px 20px rgba(239, 68, 68, 0.15)' : 'none',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 16
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 320 }}>
+            <div style={{
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              background: miningData.anomaly_spike.has_anomaly ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 22
+            }}>
+              {miningData.anomaly_spike.has_anomaly ? '🚨' : '🛡️'}
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <span style={{
+                  fontSize: 13,
+                  fontWeight: 900,
+                  letterSpacing: '0.05em',
+                  textTransform: 'uppercase',
+                  color: miningData.anomaly_spike.has_anomaly ? '#DC2626' : '#059669'
+                }}>
+                  {miningData.anomaly_spike.has_anomaly ? 'CRITICAL OUTAGE SPIKE ALERT' : 'POISSON OPERATIONAL HEALTH: NORMAL'}
+                </span>
+                <span style={{
+                  padding: '2px 8px',
+                  borderRadius: 6,
+                  fontSize: 11,
+                  fontWeight: 800,
+                  background: miningData.anomaly_spike.has_anomaly ? '#EF4444' : '#10B981',
+                  color: 'white'
+                }}>
+                  Z = {miningData.anomaly_spike.z_score.toFixed(2)} (Threshold: 2.5)
+                </span>
+                {miningData.anomaly_spike.cluster_name && (
+                  <span style={{
+                    padding: '2px 8px',
+                    borderRadius: 6,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text)'
+                  }}>
+                    Cluster: {miningData.anomaly_spike.cluster_name}
+                  </span>
+                )}
+              </div>
+              <p style={{ margin: '4px 0 0 0', fontSize: 13, color: 'var(--text)', fontWeight: 600 }}>
+                {miningData.anomaly_spike.alert_message}
+              </p>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 3 }}>
+                Rate: {miningData.anomaly_spike.current_hourly_rate}/hr (Baseline: μ = {miningData.anomaly_spike.rolling_mean_mu.toFixed(1)}/hr, σ = {miningData.anomaly_spike.rolling_std_sigma.toFixed(1)}) — Formula: Z = (x_t - μ_t) / σ_t &gt; 2.5
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {miningData.anomaly_spike.recommended_action && (
+              <div style={{
+                padding: '8px 12px',
+                borderRadius: 8,
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+                fontSize: 11,
+                color: '#B91C1C',
+                fontWeight: 700,
+                maxWidth: 260
+              }}>
+                ⚡ Action: {miningData.anomaly_spike.recommended_action}
+              </div>
+            )}
+            <button
+              onClick={() => {
+                const next = !simulateSpike;
+                setSimulateSpike(next);
+                fetchMiningData(next);
+              }}
+              style={{
+                padding: '8px 14px',
+                borderRadius: 8,
+                border: '1px solid var(--border)',
+                background: 'var(--bg-surface)',
+                color: 'var(--text)',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+              }}
+            >
+              {simulateSpike ? 'Show Normal Baseline' : 'Simulate Outage Spike (Z > 2.5)'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 30 }}>
@@ -313,6 +443,139 @@ const TeamReports = () => {
               )}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* ── FRONTIER PILLAR 5: SUPPORT DIALOGUE MINING (6 OPERATIONAL CLUSTERS) ── */}
+      <div className="card glass animate-in" style={{ padding: 30, marginBottom: 30 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, flexWrap: 'wrap', gap: 16 }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <h3 style={{ fontSize: 17, fontWeight: 800, color: 'var(--text)', margin: 0 }}>
+                📡 Support Dialogue Mining & Operational Clusters
+              </h3>
+              <span style={{
+                padding: '3px 8px',
+                borderRadius: 6,
+                background: 'var(--primary-glow)',
+                color: 'var(--primary)',
+                fontSize: 11,
+                fontWeight: 800
+              }}>
+                Nugroho 2025 B2B CVM
+              </span>
+            </div>
+            <p style={{ color: 'var(--text-muted)', fontSize: 13, marginTop: 4, maxWidth: 720 }}>
+              Autonomous multi-channel dialogue clustering across 6 operational domains (WhatsApp, Voice, Email). Continuously computes rolling Poisson arrival rates to predict outages and customer attrition before ticket escalation.
+            </p>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--primary)' }}>
+              {miningData?.total_analyzed_dialogues || 0}
+            </div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              Analyzed Dialogues
+            </div>
+          </div>
+        </div>
+
+        {/* 6 Clusters Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 20 }} className="middle-grid">
+          {miningData?.clusters?.map((cluster) => {
+            const isSelected = activeSnippetCluster === cluster.cluster_name;
+            return (
+              <div
+                key={cluster.cluster_name}
+                onClick={() => setActiveSnippetCluster(isSelected ? null : cluster.cluster_name)}
+                style={{
+                  padding: 18,
+                  borderRadius: 14,
+                  background: isSelected ? 'var(--bg-subtle)' : 'var(--bg-surface)',
+                  border: isSelected ? `2px solid ${cluster.color}` : '1px solid var(--border)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 20 }}>{cluster.icon}</span>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>
+                      {cluster.cluster_name}
+                    </span>
+                  </div>
+                  <span style={{
+                    padding: '3px 8px',
+                    borderRadius: 6,
+                    fontSize: 11,
+                    fontWeight: 800,
+                    background: `${cluster.color}18`,
+                    color: cluster.color
+                  }}>
+                    {cluster.percentage}%
+                  </span>
+                </div>
+
+                {/* Progress bar */}
+                <div style={{ width: '100%', height: 6, background: 'var(--bg-subtle)', borderRadius: 3, overflow: 'hidden', marginBottom: 12 }}>
+                  <div style={{ width: `${cluster.percentage}%`, height: '100%', background: cluster.color, borderRadius: 3 }} />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
+                  <span style={{ color: 'var(--text-muted)' }}>{cluster.message_count} communications</span>
+                  <span style={{ color: cluster.color, fontWeight: 700, fontSize: 11 }}>
+                    {isSelected ? '▲ Hide Dialogues' : '▼ Inspect Dialogues'}
+                  </span>
+                </div>
+
+                {/* Expanded Snippets Drawer */}
+                {isSelected && cluster.sample_snippets && cluster.sample_snippets.length > 0 && (
+                  <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--border)', fontSize: 11.5 }}>
+                    <div style={{ fontWeight: 800, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase', fontSize: 10 }}>
+                      Grounded Dialogue Samples:
+                    </div>
+                    {cluster.sample_snippets.map((snip, sIdx) => (
+                      <div key={sIdx} style={{
+                        padding: '6px 10px',
+                        background: 'var(--bg-surface)',
+                        borderRadius: 6,
+                        border: '1px solid var(--border-subtle)',
+                        marginBottom: 6,
+                        color: 'var(--text)',
+                        fontStyle: 'italic',
+                        lineHeight: 1.4
+                      }}>
+                        "{snip}"
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Statistical Model Footnote */}
+        <div style={{
+          padding: '12px 16px',
+          borderRadius: 10,
+          background: 'var(--bg-subtle)',
+          border: '1px solid var(--border-subtle)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 12,
+          fontSize: 11.5,
+          color: 'var(--text-muted)'
+        }}>
+          <div>
+            <strong>Poisson Mathematical Framework:</strong> Arrival rate modeled as <code>P(k events in interval) = (λ^k * e^-λ) / k!</code>. Standardized anomaly score: <code>Z = (x_t - μ_t) / σ_t</code>.
+          </div>
+          <div style={{ color: 'var(--primary)', fontWeight: 700 }}>
+            SLA Response Threshold: Z &gt; 2.5 (p &lt; 0.0062)
+          </div>
         </div>
       </div>
 

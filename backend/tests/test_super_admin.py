@@ -57,17 +57,25 @@ def _auth(token):
 # ────────────────────────────────────────────────────────────────────────────
 
 @pytest.fixture()
-def super_admin_token(client):
+def super_admin_token(client, db):
     """Register or login the Super Admin user and return their JWT."""
+    from app.models.user import User
     _register(client, "Dale CRM Admin", SUPER_ADMIN_EMAIL, SUPER_ADMIN_PASSWORD)
+    user = db.query(User).filter(User.email == SUPER_ADMIN_EMAIL).first()
+    if user:
+        user.is_email_verified = True
+        user.role = "Owner / Admin"
+        user.company_id = None
+        db.commit()
     token = _login(client, SUPER_ADMIN_EMAIL, SUPER_ADMIN_PASSWORD)
     assert token, "Super Admin login failed — check seeding or credentials"
     return token
 
 
 @pytest.fixture()
-def company_setup(client):
+def company_setup(client, db):
     """Create a company, a company admin, and a sales rep inside that company."""
+    from app.models.user import User
     # Create company
     c_resp = client.post(
         "/api/company/",
@@ -78,11 +86,23 @@ def company_setup(client):
 
     # Register company admin
     _register(client, COMPANY_ADMIN_NAME, COMPANY_ADMIN_EMAIL, COMPANY_ADMIN_PASSWORD)
+    admin_user = db.query(User).filter(User.email == COMPANY_ADMIN_EMAIL).first()
+    if admin_user:
+        admin_user.is_email_verified = True
+        admin_user.role = "Sales Admin"
+        admin_user.company_id = company_id
+        db.commit()
     admin_token = _login(client, COMPANY_ADMIN_EMAIL, COMPANY_ADMIN_PASSWORD)
     assert admin_token
 
     # Register sales rep
     _register(client, SALES_REP_NAME, SALES_REP_EMAIL, SALES_REP_PASSWORD)
+    rep_user = db.query(User).filter(User.email == SALES_REP_EMAIL).first()
+    if rep_user:
+        rep_user.is_email_verified = True
+        rep_user.role = "Sales Rep"
+        rep_user.company_id = company_id
+        db.commit()
     rep_token = _login(client, SALES_REP_EMAIL, SALES_REP_PASSWORD)
     assert rep_token
 

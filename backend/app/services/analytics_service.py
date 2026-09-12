@@ -413,3 +413,86 @@ def get_team_progress_report(db: Session, current_user: User):
     }
 
 
+def get_leaderboard(db: Session, user: User) -> dict:
+    """Computes gamified sales rep rankings, badges, quota attainment, and velocity."""
+    report = get_team_progress_report(db, user)
+    members = report.get("members", [])
+    
+    STANDARD_QUOTA = 500000.0  # ₹5,00,000 standard monthly/quarterly quota
+    
+    ranked = []
+    for m in members:
+        rev = float(m.get("revenue_won", 0.0))
+        win_rate = float(m.get("win_rate", 0.0))
+        leads = int(m.get("leads_count", 0))
+        won = int(m.get("deals_won", 0))
+        
+        attainment = round((rev / STANDARD_QUOTA) * 100.0, 1)
+        
+        # Calculate composite rep score (0 - 100)
+        score = min(100, int((rev / STANDARD_QUOTA) * 50 + (win_rate * 0.3) + min(20, leads * 2)))
+        
+        # Badges award engine
+        badges = []
+        if won >= 3:
+            badges.append({"name": "Deal Closer", "icon": "🎯", "color": "#10B981", "desc": "Closed 3+ high-value deals"})
+        if win_rate >= 50 and won > 0:
+            badges.append({"name": "Sniper", "icon": "⚡", "color": "#F59E0B", "desc": "Win rate exceeding 50%"})
+        if leads >= 8:
+            badges.append({"name": "Pipeline King", "icon": "👑", "color": "#8B5CF6", "desc": "Managing high volume pipeline"})
+        if attainment >= 100:
+            badges.append({"name": "President's Club", "icon": "🏆", "color": "#EC4899", "desc": "Exceeded 100% quota"})
+        if not badges:
+            badges.append({"name": "Active Hunter", "icon": "🚀", "color": "#3B82F6", "desc": "Active deal hunter"})
+            
+        ranked.append({
+            "user_id": m["user_id"],
+            "name": m["name"],
+            "email": m["email"],
+            "team_id": m["team_id"],
+            "role": m["role"],
+            "revenue_won": rev,
+            "deals_won": won,
+            "deals_open": m.get("deals_open", 0),
+            "win_rate": win_rate,
+            "leads_count": leads,
+            "quota_target": STANDARD_QUOTA,
+            "quota_attainment_pct": attainment,
+            "score": score,
+            "badges": badges
+        })
+        
+    # Sort descending by revenue_won, then score
+    ranked.sort(key=lambda x: (x["revenue_won"], x["score"]), reverse=True)
+    
+    # Assign podium ranks
+    current_user_info = None
+    for idx, r in enumerate(ranked, start=1):
+        r["rank"] = idx
+        if str(r["user_id"]) == str(user.id):
+            current_user_info = r
+            
+    if not current_user_info:
+        current_user_info = {
+            "user_id": str(user.id),
+            "name": user.name or "You",
+            "email": user.email,
+            "rank": len(ranked) + 1,
+            "revenue_won": 0.0,
+            "deals_won": 0,
+            "deals_open": 0,
+            "win_rate": 0.0,
+            "leads_count": 0,
+            "quota_target": STANDARD_QUOTA,
+            "quota_attainment_pct": 0.0,
+            "score": 50,
+            "badges": [{"name": "Active Hunter", "icon": "🚀", "color": "#3B82F6", "desc": "Active deal hunter"}]
+        }
+        
+    return {
+        "leaderboard": ranked,
+        "current_user_stats": current_user_info,
+        "quota_target_default": STANDARD_QUOTA
+    }
+
+

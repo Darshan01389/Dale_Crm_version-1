@@ -199,6 +199,7 @@ const RepPulse = () => {
   const { profile } = useUser();
   const [period, setPeriod] = useState('30 Days');
   const [data, setData] = useState(null);
+  const [leaderboardData, setLeaderboardData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -209,10 +210,18 @@ const RepPulse = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('voiceiq_token');
-      const res = await axios.get(`/api/analytics/dashboard?date_range=${period}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setData(res.data);
+      const [dashRes, leadRes] = await Promise.all([
+        axios.get(`/api/analytics/dashboard?date_range=${period}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        axios.get('/api/analytics/leaderboard', {
+          headers: { Authorization: `Bearer ${token}` }
+        }).catch(err => ({ data: null }))
+      ]);
+      setData(dashRes.data);
+      if (leadRes && leadRes.data) {
+        setLeaderboardData(leadRes.data);
+      }
     } catch (err) {
       console.error("Error fetching pulse data:", err);
     } finally {
@@ -319,8 +328,81 @@ const RepPulse = () => {
           </div>
         </div>
 
+        {/* Quota Attainment & Gamification Badges */}
+        {leaderboardData && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, marginBottom: 40 }} className="middle-grid">
+            {/* Quota Meter */}
+            <div className="card glass" style={{ padding: 28, border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <div>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em' }}>QUOTA VELOCITY</span>
+                  <h3 className="text-h3" style={{ margin: '4px 0 0' }}>Quarterly Attainment</h3>
+                </div>
+                <div style={{ 
+                  padding: '6px 12px', borderRadius: 20, 
+                  background: (leaderboardData.current_user_stats?.quota_attainment_pct || 0) >= 100 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(99, 102, 241, 0.15)',
+                  color: (leaderboardData.current_user_stats?.quota_attainment_pct || 0) >= 100 ? 'var(--success)' : 'var(--primary)',
+                  fontWeight: 800, fontSize: 13
+                }}>
+                  {leaderboardData.current_user_stats?.quota_attainment_pct || 0}% of Target
+                </div>
+              </div>
+              
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 8, color: 'var(--text-muted)' }}>
+                  <span>Closed: <strong style={{ color: 'var(--text)' }}>₹{((leaderboardData.current_user_stats?.revenue_won || 0) / 100000).toFixed(2)}L</strong></span>
+                  <span>Target: <strong>₹{((leaderboardData.quota_target_default || 500000) / 100000).toFixed(1)}L</strong></span>
+                </div>
+                <div style={{ width: '100%', height: 12, background: 'var(--bg-subtle)', borderRadius: 10, overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ 
+                    width: `${Math.min(leaderboardData.current_user_stats?.quota_attainment_pct || 0, 100)}%`, 
+                    height: '100%', 
+                    background: 'linear-gradient(90deg, #4F46E5 0%, #06B6D4 100%)',
+                    borderRadius: 10,
+                    transition: 'width 1s ease-in-out'
+                  }} />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 12, color: 'var(--text-muted)' }}>
+                <span>🏆 Rank: <strong style={{ color: 'var(--primary)' }}>#{leaderboardData.current_user_stats?.rank || 1}</strong> of {leaderboardData.leaderboard?.length || 1} reps</span>
+                <span>•</span>
+                <span>Deals Won: <strong style={{ color: 'var(--text)' }}>{leaderboardData.current_user_stats?.deals_won || 0}</strong></span>
+              </div>
+            </div>
+
+            {/* Earned Badges */}
+            <div className="card glass" style={{ padding: 28, border: '1px solid var(--border)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <div>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em' }}>RECOGNITION</span>
+                  <h3 className="text-h3" style={{ margin: '4px 0 0' }}>Unlocked Badges</h3>
+                </div>
+                <span style={{ fontSize: 20 }}>🎖️</span>
+              </div>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                {(leaderboardData.current_user_stats?.badges || []).map((b, i) => (
+                  <div key={i} style={{ 
+                    padding: '8px 14px', borderRadius: 12, 
+                    background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)',
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    boxShadow: 'var(--shadow-sm)'
+                  }}>
+                    <span style={{ fontSize: 16 }}>{b.icon}</span>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--text)' }}>{b.name}</div>
+                      <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{b.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Win Probability Widget */}
-        <div className="card forecast-widget" style={{ padding: 32, border: '1px solid rgba(99, 102, 241, 0.2)', background: 'rgba(99, 102, 241, 0.05)' }}>
+        <div className="card forecast-widget" style={{ padding: 32, border: '1px solid rgba(99, 102, 241, 0.2)', background: 'rgba(99, 102, 241, 0.05)', marginBottom: 40 }}>
           <div className="forecast-inner" style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
             <div style={{ 
               width: 80, height: 80, borderRadius: 20, flexShrink: 0,
@@ -346,6 +428,98 @@ const RepPulse = () => {
             </div>
           </div>
         </div>
+
+        {/* Team Leaderboard Section */}
+        {leaderboardData && leaderboardData.leaderboard?.length > 0 && (
+          <div className="card glass" style={{ padding: 32, marginBottom: 40, border: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
+              <div>
+                <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.06em' }}>SALES SQUAD ARENA</span>
+                <h3 className="text-h2" style={{ margin: '4px 0 0' }}>Company Leaderboard</h3>
+              </div>
+              <span style={{ fontSize: 12, color: 'var(--text-muted)', background: 'var(--bg-subtle)', padding: '6px 12px', borderRadius: 10 }}>
+                ⚡ Auto-updated from closed pipeline
+              </span>
+            </div>
+
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border)', fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                    <th style={{ padding: '12px 16px' }}>Rank</th>
+                    <th style={{ padding: '12px 16px' }}>Sales Rep</th>
+                    <th style={{ padding: '12px 16px' }}>Deals Won</th>
+                    <th style={{ padding: '12px 16px' }}>Revenue Won</th>
+                    <th style={{ padding: '12px 16px' }}>Win Rate</th>
+                    <th style={{ padding: '12px 16px' }}>Quota %</th>
+                    <th style={{ padding: '12px 16px' }}>Velocity Score</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {leaderboardData.leaderboard.map((rep) => {
+                    const isSelf = String(rep.user_id) === String(profile?.id);
+                    const medal = rep.rank === 1 ? '🥇' : rep.rank === 2 ? '🥈' : rep.rank === 3 ? '🥉' : `#${rep.rank}`;
+                    return (
+                      <tr 
+                        key={rep.user_id}
+                        style={{ 
+                          borderBottom: '1px solid var(--border-subtle)',
+                          background: isSelf ? 'rgba(79, 70, 229, 0.08)' : 'transparent',
+                          fontWeight: isSelf ? 700 : 500
+                        }}
+                      >
+                        <td style={{ padding: '16px', fontSize: 16 }}>{medal}</td>
+                        <td style={{ padding: '16px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{ 
+                              width: 32, height: 32, borderRadius: '50%', 
+                              background: 'var(--primary)', color: 'white', 
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 12, fontWeight: 800 
+                            }}>
+                              {(rep.name || 'U')[0].toUpperCase()}
+                            </div>
+                            <div>
+                              <div style={{ color: 'var(--text)', fontSize: 14 }}>
+                                {rep.name} {isSelf && <span style={{ fontSize: 10, padding: '2px 6px', background: 'var(--primary)', color: 'white', borderRadius: 6, marginLeft: 4 }}>YOU</span>}
+                              </div>
+                              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{rep.email}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ padding: '16px', color: 'var(--text)' }}>{rep.deals_won}</td>
+                        <td style={{ padding: '16px', color: 'var(--success)', fontWeight: 800 }}>
+                          ₹{(rep.revenue_won / 100000).toFixed(2)}L
+                        </td>
+                        <td style={{ padding: '16px', color: 'var(--text)' }}>{rep.win_rate}%</td>
+                        <td style={{ padding: '16px' }}>
+                          <span style={{ 
+                            padding: '4px 8px', borderRadius: 6, fontSize: 11, fontWeight: 800,
+                            background: rep.quota_attainment_pct >= 100 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(99, 102, 241, 0.1)',
+                            color: rep.quota_attainment_pct >= 100 ? 'var(--success)' : 'var(--primary)'
+                          }}>
+                            {rep.quota_attainment_pct}%
+                          </span>
+                        </td>
+                        <td style={{ padding: '16px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ 
+                              width: 40, height: 8, borderRadius: 4, 
+                              background: 'var(--bg-subtle)', overflow: 'hidden' 
+                            }}>
+                              <div style={{ width: `${rep.score}%`, height: '100%', background: 'var(--primary)' }} />
+                            </div>
+                            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{rep.score}/100</span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
       </div>
       <style>{`

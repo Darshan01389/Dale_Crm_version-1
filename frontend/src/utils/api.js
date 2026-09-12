@@ -3,17 +3,41 @@ import axios from 'axios';
 // Configure default API base URL
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
 
-// Global request interceptor
+// Global request interceptor for Axios
 axios.interceptors.request.use(config => {
   // Check token in sessionStorage first, fallback to localStorage
   const token = sessionStorage.getItem('voiceiq_token') || localStorage.getItem('voiceiq_token');
-  if (token && !config.headers.Authorization) {
+  const authHeader = config.headers.Authorization || config.headers.authorization;
+  if (token && (!authHeader || authHeader === 'Bearer null' || authHeader === 'Bearer undefined')) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 }, error => {
   return Promise.reject(error);
 });
+
+// Global monkey-patch interceptor for fetch
+const originalFetch = window.fetch;
+window.fetch = async function (url, options = {}) {
+  const token = sessionStorage.getItem('voiceiq_token') || localStorage.getItem('voiceiq_token');
+  if (token) {
+    if (!options.headers) {
+      options.headers = {};
+    }
+    if (options.headers instanceof Headers) {
+      const auth = options.headers.get('Authorization') || options.headers.get('authorization');
+      if (!auth || auth === 'Bearer null' || auth === 'Bearer undefined') {
+        options.headers.set('Authorization', `Bearer ${token}`);
+      }
+    } else if (typeof options.headers === 'object') {
+      const auth = options.headers['Authorization'] || options.headers['authorization'];
+      if (!auth || auth === 'Bearer null' || auth === 'Bearer undefined') {
+        options.headers['Authorization'] = `Bearer ${token}`;
+      }
+    }
+  }
+  return originalFetch(url, options);
+};
 
 // Global response interceptor for token refresh (401 status handling)
 let isRefreshing = false;

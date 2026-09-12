@@ -32,6 +32,15 @@ def team_progress(
     return analytics_service.get_team_progress_report(db, current_user)
 
 
+@router.get("/leaderboard")
+def leaderboard(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Provides gamified sales rep rankings, badges, quota attainment, and velocity."""
+    return analytics_service.get_leaderboard(db, current_user)
+
+
 @router.post("/train", response_model=ModelTrainingMetrics)
 def train_model():
     """Train the lead scoring model from the merged dataset and return evaluation metrics."""

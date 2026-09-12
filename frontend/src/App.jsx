@@ -394,6 +394,8 @@ const App = () => {
 
         {protected_route('/community-forums', CommunityForums, ['Sales Rep', 'Sales', 'Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
 
+        {protected_route('/whatsapp-simulator', WhatsAppSimulator, ['Sales Rep', 'Sales', 'Team Lead', 'Manager', 'Owner / Admin', 'Sales Admin'])}
+
 
 
         {/* Pipeline — responsive (Kanban desktop / MobilePipeline mobile) */}

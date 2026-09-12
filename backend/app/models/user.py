@@ -2,9 +2,10 @@
 # Python ORM representation of the 'users' table in PostgreSQL
 # SQLAlchemy reads this and knows exactly how to query the table
 
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Integer
+from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Integer, or_, and_
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
+from sqlalchemy.ext.hybrid import hybrid_property
 import uuid
 from app.core.database import Base
 
@@ -38,13 +39,24 @@ class User(Base):
     verification_code = Column(String(6), nullable=True)
 
 
-    @property
+    @hybrid_property
     def is_super_admin(self) -> bool:
         return self.role in ["admin", "developer", "admin/developers"] or (self.role == "Owner / Admin" and self.company_id is None)
 
-    @property
+    @is_super_admin.expression
+    def is_super_admin(cls):
+        return or_(
+            cls.role.in_(["admin", "developer", "admin/developers"]),
+            and_(cls.role == "Owner / Admin", cls.company_id.is_(None))
+        )
+
+    @hybrid_property
     def is_company_admin(self) -> bool:
         return self.role in ["Owner / Admin", "Sales Admin"] and self.company_id is not None
+
+    @is_company_admin.expression
+    def is_company_admin(cls):
+        return and_(cls.role.in_(["Owner / Admin", "Sales Admin"]), cls.company_id.is_not(None))
 
     # This is just a helper so when you print a User object you see something useful
     def __repr__(self):

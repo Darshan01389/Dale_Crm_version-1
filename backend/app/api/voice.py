@@ -134,21 +134,28 @@ async def upload_voice_recording(
         )
         db.add(activity)
         
-        # 5. Pipeline Auto-Update
-        if analysis and analysis.get("suggested_stage"):
-            suggested = analysis.get("suggested_stage").lower()
-            lead = db.query(Lead).filter(Lead.id == lead_id).first()
-            if lead and suggested in ["contacted", "proposal", "negotiation", "won", "lost"]:
-                lead.status = suggested
-                db.add(lead)
+        # 5. Confidence-Gated, Evidence-Grounded Decision Layer
+        # Replaces unsafe direct write (lines 137-144) per IEEE Research Specification
+        from app.services.decision_gate import decision_gate_service
+        gate_result = decision_gate_service.evaluate_and_execute(
+            db=db,
+            lead_id=lead_id,
+            voice_recording_id=recording.id,
+            transcript=transcript,
+            analysis=analysis,
+            audio_file_path=file_path,
+        )
 
     db.commit()
     db.refresh(recording)
 
     return {
-        "id": recording.id,
+        "id": str(recording.id),
         "transcript": transcript,
-        "analysis": analysis
+        "analysis": analysis,
+        "gate_decision": gate_result.get("primary_decision") if lead_id else None,
+        "all_candidates": gate_result.get("all_candidates", []) if lead_id else [],
+        "acoustic_metrics": gate_result.get("acoustic_metrics", {}) if lead_id else {},
     }
 
 @router.delete("/{recording_id}", status_code=204)
@@ -186,3 +193,85 @@ def delete_voice_recording_get(
     """
     delete_voice_recording(recording_id, db, current_user)
     return {"status": "success", "message": "Recording deleted successfully."}
+
+
+from pydantic import BaseModel
+
+class ObjectionDetectRequest(BaseModel):
+    text: str
+    prospect_name: str | None = "Prospect"
+
+@router.post("/detect-objection")
+def detect_objection(
+    body: ObjectionDetectRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Real-time objection detection and winning battlecard generator for live calls."""
+    text_lower = body.text.lower()
+    cards = []
+
+    # 1. Price / Budget
+    if any(k in text_lower for k in ["expensive", "cost", "budget", "price", "pricing", "discount", "cheaper", "money"]):
+        cards.append({
+            "type": "PRICING_OBJECTION",
+            "title": "Pricing & Budget Concern",
+            "icon": "💰",
+            "color": "#F59E0B",
+            "confidence": 94,
+            "strategy": "Pivot to Total Cost of Ownership (TCO) & eliminate hidden API fees.",
+            "script": "I completely understand budget is top of mind. Most CRM vendors charge separately for WhatsApp API gateways, telephone add-ons, and AI assistants. Dale CRM bundles all three natively, reducing total stack cost by ~35%. Would a quick 3-month ROI comparison help?"
+        })
+
+    # 2. Competitor Mention
+    if any(k in text_lower for k in ["hubspot", "salesforce", "zoho", "freshsales", "competitor", "other vendor"]):
+        cards.append({
+            "type": "COMPETITOR_MENTION",
+            "title": "Competitor Differentiation",
+            "icon": "⚔️",
+            "color": "#EC4899",
+            "confidence": 91,
+            "strategy": "Highlight native omnichannel and zero setup time vs expensive consultants.",
+            "script": "They are a reputable tool! Where our users see the biggest difference is implementation time and live collaboration: with Dale CRM, you have built-in WebRTC softphones, WhatsApp automation, and live battlecards without paying $15,000 in integration fees."
+        })
+
+    # 3. Timing / Delays
+    if any(k in text_lower for k in ["later", "next quarter", "busy", "send email", "not now", "next month"]):
+        cards.append({
+            "type": "TIMING_OBJECTION",
+            "title": "Timing & Urgency Rebuttal",
+            "icon": "⏳",
+            "color": "#6366F1",
+            "confidence": 88,
+            "strategy": "Offer a zero-friction micro-commitment or self-service sandbox.",
+            "script": "I completely respect that timing is tight right now. How about I set you up with an interactive demo sandbox so you can test it on your own schedule, and we touch base for just 5 minutes next Tuesday?"
+        })
+
+    # 4. Authority / Multi-stakeholder
+    if any(k in text_lower for k in ["boss", "manager", "board", "partner", "decision maker", "team"]):
+        cards.append({
+            "type": "AUTHORITY_GAP",
+            "title": "Decision Maker Enablement",
+            "icon": "👔",
+            "color": "#8B5CF6",
+            "confidence": 85,
+            "strategy": "Arm the prospect with executive ROI materials to champion Dale CRM internally.",
+            "script": "Understood! To make your internal sync painless, I can share an executive 1-page business case outlining pipeline velocity and compliance. Would that save you time when presenting to your leadership?"
+        })
+
+    if not cards:
+        cards.append({
+            "type": "DISCOVERY_INSIGHT",
+            "title": "Discovery & Value Anchor",
+            "icon": "💡",
+            "color": "#10B981",
+            "confidence": 80,
+            "strategy": "Dig deeper into their sales team bottlenecks.",
+            "script": "That's very helpful context. Out of curiosity, what is currently your biggest bottleneck—lead response time or pipeline follow-ups?"
+        })
+
+    return {
+        "text_analyzed": body.text,
+        "battlecards": cards,
+        "recommended_tone": "Empathetic & Consultative",
+        "talk_to_listen_ratio_target": "40% Talk / 60% Listen"
+    }
